@@ -535,9 +535,9 @@ class TransactionPattern:
             returnList.append(self.transactionBuyPowerList[i])
             returnList.append(self.transactionSellPowerList[i])
             if self.transactionBuyList[0]:
-                returnList.append(self.transactionBuyList[i]/self.transactionBuyList[0])
+                returnList.append(self.transactionBuyPowerList[i]/self.transactionBuyPowerList[0])
             else:
-                returnList.append( self.transactionBuyList[i] / 0.0000001 )
+                returnList.append( self.transactionBuyPowerList[i] / 0.0000001 )
             returnList.append(self.minMaxPriceList[i])
             returnList.append(self.firstLastPriceList[i])
             returnList.append(self.ratioFirstToJump[i])
@@ -699,6 +699,7 @@ class TransactionPattern:
         ruleList.SetIndex(AP.AdjustableParameter.NetPrice72H, index)
         index += 1
 
+        returnList.extend(self.marketStateList)
         returnList.append(self.timeToJump)
 
         return returnList

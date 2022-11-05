@@ -2,7 +2,11 @@ from enum import Enum
 import numpy as np
 import json
 
+IsTeaching = False
 
+TotalStrikeCount = 0
+if not IsTeaching:
+    TotalStrikeCount = 1000
 class AdjustableParameter(Enum):
     TotalBuyCount0 = "TotalBuyCount0"
     TotalSellCount0 = "TotalSellCount0"
@@ -134,11 +138,11 @@ class Rule:
         self.isTransaction = "Transaction" in self.tags
         if self.adjustableParameter == "PowerRatio0":
             self.isTuned = True
-
-        if not self.isTuned:
-            self.threshold = 100000000
-            if self.IsSmall():
-                self.threshold = -100000000
+        if IsTeaching:
+            if not self.isTuned:
+                self.threshold = 100000000
+                if self.IsSmall():
+                    self.threshold = -100000000
 
     def SetIndex(self, index):
         self.index = index
@@ -211,6 +215,8 @@ class RuleList:
         self.ruleList = []
         self.isTuned = False
         self.iterationCount = 0
+        self.strikeCount = 0
+        self.lastSelectedRule = None
         file = open("/home/erdem/Documents/RuleJsonList.json", "r")
         ruleDictionary = json.load(file)
         curIndex = 0
@@ -226,7 +232,10 @@ class RuleList:
 
     def Control(self, parameter, checkType, val):
         rule = self.GetRule(parameter, checkType)
-        return rule.Check(val)
+        result = rule.Check(val)
+        if result:
+            self.strikeCount += 1
+        return self.strikeCount > TotalStrikeCount
 
     def ResetRules(self):
         for rule in self.ruleList:
@@ -238,11 +247,14 @@ class RuleList:
         selectedRule = None
         bestVal = -1000000.0
         for rule in self.ruleList:
+            if rule.adjustableParameter == self.lastSelectedRule:
+                continue
             curVal = rule.badCount - (rule.goodCount*5)
             if curVal > bestVal and not rule.isTuned and rule.tuneCount <= 3 :
                 bestVal = curVal
                 selectedRule = rule
         selectedRule.tuneCount += 1
+        self.lastSelectedRule = selectedRule
         print("Iteration done best seperator rule was", str(selectedRule.adjustableParameter), "its value is: ", selectedRule.threshold,
               "small: ", selectedRule.IsSmall(), "will be replaced: ", selectedRule.quantileVal, "best val:", bestVal)
         selectedRule.SetThreshold(selectedRule.quantileVal)
@@ -269,28 +281,37 @@ class RuleList:
         ruleSmall = self.GetRule(parameter, CheckType.Small)
         ruleBig = self.GetRule(parameter, CheckType.Big)
 
-        return ruleSmall.Check(val) or ruleBig.Check(val)
-
+        result = ruleSmall.Check(val) or ruleBig.Check(val)
+        if result:
+            self.strikeCount += 1
+        return self.strikeCount > TotalStrikeCount
 
     def ControlIndex(self, index, checkType, val):
         if checkType != CheckType.Small:
             index += 1
         rule = self.ruleList[index]
-        return rule.Check(val)
+        result = rule.Check(val)
+        if result:
+            self.strikeCount += 1
+        return self.strikeCount > TotalStrikeCount
 
 
     def ControlClampIndex(self, index, val):
         ruleSmall = self.ruleList[index]
         ruleBig = self.ruleList[index + 1]
-
-        return ruleSmall.Check(val) or ruleBig.Check(val)
+        result = ruleSmall.Check(val) or ruleBig.Check(val)
+        if result:
+            self.strikeCount += 1
+        return self.strikeCount > TotalStrikeCount
 
 
     def ControlClampIndexDivider(self, index, val, divider):
         ruleSmall = self.ruleList[index]
         ruleBig = self.ruleList[index + 1]
-
-        return ruleSmall.CheckDivider(val, divider) or ruleBig.CheckDivider(val, divider)
+        result = ruleSmall.CheckDivider(val, divider) or ruleBig.CheckDivider(val, divider)
+        if result:
+            self.strikeCount += 1
+        return self.strikeCount > TotalStrikeCount
 
     def GetRulesWithIndex(self, index):
         returnVal = []
