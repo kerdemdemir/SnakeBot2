@@ -47,7 +47,8 @@ class SuddenChangeHandler:
         self.addedCount  = 0
         self.isAfterBuyRecord = fileName.startswith("Positive")
         self.smallestStrikeCount = 1000
-        
+        self.bestPattern = None
+
         self.jumpState = []
         if self.__Parse(jsonIn) == -1:
             return
@@ -153,9 +154,6 @@ class SuddenChangeHandler:
         datetime_object = datetime.strptime(jsonIn["reportTime"].split(".")[0], '%Y-%b-%d %H:%M:%S')
         now = datetime.now()
 
-        if not AP.IsTeaching:
-            if (now - datetime_object).total_seconds() > 60*60*8:
-                return -1
         if (now - datetime_object).total_seconds() < 60*60*24*1:
             self.multiplier = 6
         elif (now - datetime_object).total_seconds() < 60*60*24*3:
@@ -240,11 +238,14 @@ class SuddenChangeHandler:
             self.dataList.reverse()
 
         if len(self.patternList) > TransactionBasics.MaximumSampleSizeFromGoodPattern:
-            sorted(self.patternList, key=lambda l: l.lastPrice)
-            elem = self.patternList[0]
-            self.patternList.clear()
-            for _ in range(self.multiplier):
-                self.patternList.append(elem)
+            if AP.IsTraining:
+                self.patternList.append(self.bestPattern)
+            else:
+                sorted(self.patternList, key=lambda l: l.lastPrice)
+                elem = self.patternList[0]
+                self.patternList.clear()
+                for _ in range(self.multiplier):
+                    self.patternList.append(elem)
 
         if len(self.badPatternList) > TransactionBasics.MaximumSampleSizeFromPattern:
             sorted(self.badPatternList, key=lambda l: l.lastPrice)
@@ -455,9 +456,10 @@ class SuddenChangeHandler:
         if rules.ControlClamp(AP.AdjustableParameter.NetPrice72H, pattern.netPriceList[5]):
             return
 
+        if rules.strikeCount < self.smallestStrikeCount:
+            self.bestPattern = pattern
+
         self.smallestStrikeCount = min(self.smallestStrikeCount, rules.strikeCount)
-        if not AP.IsTeaching:
-            print( "Alert ", self.currencyName, " ", self.isRise, " ", self.smallestStrikeCount)
         #print(pattern.marketStateList)
         category = self.__GetCategory(curIndex,basePrice,pattern)
         if category == 0:
@@ -587,11 +589,12 @@ class SuddenChangeMerger:
         print("Good count: ", len(self.patternList), "Bad Count" , len(self.badPatternList))
 
         for i in range(len(self.patternList[0])):
-            curRules = rules.GetRulesWithIndex(i)
-            for rule in curRules:
-                if not rules.isTuned :
-                    rule.SetFromValue(buyList[:, i])
-                rule.Print()
+            if not AP.IsTraining:
+                curRules = rules.GetRulesWithIndex(i)
+                for rule in curRules:
+                    if not rules.isTuned :
+                        rule.SetFromValue(buyList[:, i])
+                    rule.Print()
 
             buyLegend = str(np.quantile(buyList[:, i], 0.0)) + "," + str(np.quantile(buyList[:, i], 0.1)) + "," + str(
                 np.quantile(buyList[:, i], 0.25)) + "," + str(np.quantile(buyList[:, i], 0.5)) + "," + str(
@@ -604,6 +607,16 @@ class SuddenChangeMerger:
             print(buyLegend)
             print(badLegend)
             print("*******************************")
+
+        if AP.IsTraining and not AP.IsTrained:
+            for i in range(len(self.patternList[0])):
+                curRules = rules.GetRulesWithIndex(i)
+                for rule in curRules:
+                    rule.RelaxTheRules(buyList[:, i])
+            AP.IsTrained = True
+            AP.TotalStrikeCount = 0
+
+
         if rules.isTuned :
             for i in range(len(self.patternList[0])):
                 curRules = rules.GetRulesWithIndex(i)
@@ -615,8 +628,9 @@ class SuddenChangeMerger:
             if not isBadCountBigger:
                 sys.exit()
 
-        if AP.IsTeaching:
-            rules.Write(len(self.patternList), len(self.badPatternList))
+        #if AP.IsTeaching:
+        rules.Write(len(self.patternList), len(self.badPatternList))
+
 
         rules.ResetRules()
         rules.isTuned = True
@@ -652,6 +666,7 @@ class SuddenChangeManager:
         print(self.suddenChangeMergerList)
         self.FeedChangeMergers()
         self.FinalizeMergers()
+
         if AP.IsTeaching:
             for i in range(1000):
                 self.suddenChangeMergerList = []
@@ -699,6 +714,8 @@ class SuddenChangeManager:
 
     def FeedChangeMergers(self):
         jumpDataFolderPath = os.path.abspath(os.getcwd()) + "/Data/JumpData/"
+        if AP.IsTraining:
+            jumpDataFolderPath = os.path.abspath(os.getcwd()) + "/Data/TestData/"
         onlyJumpFiles = [f for f in listdir(jumpDataFolderPath) if isfile(join(jumpDataFolderPath, f))]
         for fileName in onlyJumpFiles:
             print("Reading Jump", jumpDataFolderPath + fileName, " ")

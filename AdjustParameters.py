@@ -3,10 +3,16 @@ import numpy as np
 import json
 
 IsTeaching = False
+IsTraining = True
 
+
+IsTrained = False
 TotalStrikeCount = 0
 if not IsTeaching:
     TotalStrikeCount = 1000
+
+if IsTraining:
+    TotalStrikeCount = 10
 class AdjustableParameter(Enum):
     TotalBuyCount0 = "TotalBuyCount0"
     TotalSellCount0 = "TotalSellCount0"
@@ -138,7 +144,7 @@ class Rule:
         self.isTransaction = "Transaction" in self.tags
         if self.adjustableParameter == "PowerRatio0":
             self.isTuned = True
-        if IsTeaching:
+        if IsTeaching and not IsTraining:
             if not self.isTuned:
                 self.threshold = 100000000
                 if self.IsSmall():
@@ -163,6 +169,15 @@ class Rule:
         self.SetThreshold(np.amin(list) if self.IsSmall() else np.amax(list))
     def SetThreshold(self, val):
         self.threshold = val * self.GetThresHoldPcnt(val)
+
+    def RelaxTheRules(self, list):
+        targetValue = np.min(list) if self.IsSmall() else np.max(list)
+        if self.IsSmall() and targetValue < self.threshold:
+            print("Relaxing ",  str(self.adjustableParameter), "its value is: ", self.threshold, " new value will be: ",  targetValue, " small: ", self.IsSmall())
+            self.SetThreshold(targetValue)
+        elif not self.IsSmall() and targetValue > self.threshold:
+            self.SetThreshold(targetValue)
+            print("Relaxing ", str(self.adjustableParameter), "its value is: ", self.threshold, " new value will be: ", targetValue, " small: ", self.IsSmall())
     def SetEliminationCounts(self, list, compareList, quantilePcnt):
         goodValue = np.quantile(list, quantilePcnt if self.IsSmall() else 1.0 - quantilePcnt)
 
@@ -217,6 +232,7 @@ class RuleList:
         self.iterationCount = 0
         self.strikeCount = 0
         self.lastSelectedRule = None
+
         file = open("/home/erdem/Documents/RuleJsonList.json", "r")
         ruleDictionary = json.load(file)
         curIndex = 0
