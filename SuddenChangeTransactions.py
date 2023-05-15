@@ -13,12 +13,19 @@ import random
 import AdjustParameters as AP
 from matplotlib import pyplot as plt
 import sys
+import multiprocessing
+from functools import partial
 
 PeakFeatureCount = TransactionBasics.PeakFeatureCount
 percent = 0.01
 IsOneFileOnly = False
 totalCounter = 0
 rules = AP.RuleList()
+
+
+def init_pool_processes(the_lock):
+    global lock
+    lock = the_lock
 
 class SuddenChangeHandler:
 
@@ -65,10 +72,11 @@ class SuddenChangeHandler:
         if len(tempTransaction) == 0:
             return
         lastTimeInSeconds = int(tempTransaction[-1]["T"]) // 1000
-        if self.reportTimeInSeconds - lastTimeInSeconds > 60*65:
+        diffTime = self.reportTimeInSeconds - lastTimeInSeconds
+        if diffTime > 60*65:
             self.jumpTimeInSeconds -= 60*60*2
             self.reportTimeInSeconds -= 60*60*2
-        elif self.reportTimeInSeconds - lastTimeInSeconds > 60*25:
+        elif diffTime > 60*25:
             self.jumpTimeInSeconds -= 60*60
             self.reportTimeInSeconds -= 60*60
 
@@ -294,7 +302,7 @@ class SuddenChangeHandler:
         if startBin < 0 or curIndex > lenArray:
              return
         curPattern = self.dataList[curIndex]
-        if curPattern.totalBuy < 0.05:
+        if curPattern.totalBuy < 0.03:
             return
         if self.dataList[0].firstPrice == 0.0:
             print("wierd")
@@ -366,82 +374,84 @@ class SuddenChangeHandler:
             return
         if rules.ControlClamp(AP.AdjustableParameter.MaxPowInDetail, pattern.maxDetailBuyPower):
             return
+
+
         if rules.ControlClamp(AP.AdjustableParameter.DownPeakRatio0, pattern.lastDownRatio):
-            return
+           return
         if rules.ControlClamp(AP.AdjustableParameter.UpPeakRatio0, pattern.lastUpRatio):
-            return
+           return
         if rules.ControlClamp(AP.AdjustableParameter.DownPeakRatio1, pattern.lastDownRatio2):
-            return
+           return
         if rules.ControlClamp(AP.AdjustableParameter.UpPeakRatio1, pattern.lastUpRatio2):
-            return
+           return
         if rules.ControlClamp(AP.AdjustableParameter.DownPeakRatioRise0, pattern.lastDownRatioRise):
-            return
+           return
         if rules.ControlClamp(AP.AdjustableParameter.UpPeakRatioRise0, pattern.lastUpRatioRise):
-            return
+           return
         if rules.ControlClamp(AP.AdjustableParameter.DownPeakRatioRise1, pattern.lastDownRatioRise2):
-            return
+           return
         if rules.ControlClamp(AP.AdjustableParameter.UpPeakRatioRise1, pattern.lastUpRatioRise2):
-            return
+           return
 
 
         if rules.Control(AP.AdjustableParameter.HourPriceRatioMin6, AP.CheckType.Small,  pattern.dayPriceArray[0]):
-            return
+           return
         if rules.Control(AP.AdjustableParameter.HourPriceRatioMax6, AP.CheckType.Big  , pattern.dayPriceArray[1]):
-            return
+           return
         if rules.Control(AP.AdjustableParameter.HourPriceRatioMin24, AP.CheckType.Small, pattern.dayPriceArray[2]):
-            return
+           return
         if rules.Control(AP.AdjustableParameter.HourPriceRatioMax24, AP.CheckType.Big , pattern.dayPriceArray[3]):
-            return
+           return
         if rules.Control(AP.AdjustableParameter.HourPriceRatioMin72, AP.CheckType.Small , pattern.dayPriceArray[6]):
-            return
+           return
         if rules.Control(AP.AdjustableParameter.HourPriceRatioMax72, AP.CheckType.Big, pattern.dayPriceArray[7]):
-            return
+           return
         if rules.Control(AP.AdjustableParameter.HourPriceRatioMin144, AP.CheckType.Small, pattern.dayPriceArray[8]):
-            return
+           return
         if rules.Control(AP.AdjustableParameter.HourPriceRatioMax144, AP.CheckType.Big, pattern.dayPriceArray[9]):
-            return
+           return
         if rules.Control(AP.AdjustableParameter.HourPriceRatioMin288, AP.CheckType.Small, pattern.dayPriceArray[10]):
-            return
+           return
         if rules.Control(AP.AdjustableParameter.HourPriceRatioMax288, AP.CheckType.Big, pattern.dayPriceArray[11]):
-            return
+           return
 
         if rules.ControlClamp(AP.AdjustableParameter.FirstToLastRaio, pattern.firstToLastRatio):
-            return
+           return
 
         if rules.ControlClamp(AP.AdjustableParameter.PeakLast0, pattern.peaks[-1]):
-            return
+           return
         if rules.ControlClamp(AP.AdjustableParameter.PeakLast1, pattern.peaks[-2]):
-            return
+           return
         if rules.ControlClamp(AP.AdjustableParameter.PeakLast2, pattern.peaks[-3]):
-            return
+           return
         if rules.ControlClamp(AP.AdjustableParameter.PeakLast3, pattern.peaks[-4]):
-            return
+           return
         if rules.ControlClamp(AP.AdjustableParameter.PeakLast4, pattern.peaks[-5]):
-            return
+           return
 
         if rules.ControlClamp(AP.AdjustableParameter.PeakTime0, pattern.timeList[-1]):
-            return
+           return
         if rules.ControlClamp(AP.AdjustableParameter.PeakTime1, pattern.timeList[-2]):
-            return
+           return
         if rules.ControlClamp(AP.AdjustableParameter.PeakTime2, pattern.timeList[-3]):
-            return
+           return
         if rules.ControlClamp(AP.AdjustableParameter.PeakTime3, pattern.timeList[-4]):
-            return
+           return
         if rules.ControlClamp(AP.AdjustableParameter.PeakTime4, pattern.timeList[-5]):
-            return
+           return
 
         if rules.ControlClamp(AP.AdjustableParameter.JumpCount1H, pattern.jumpCountList[0]):
-            return
+           return
         if rules.ControlClamp(AP.AdjustableParameter.JumpCount2H, pattern.jumpCountList[1]):
-            return
+           return
         if rules.ControlClamp(AP.AdjustableParameter.JumpCount4H, pattern.jumpCountList[2]):
-            return
+           return
         if rules.ControlClamp(AP.AdjustableParameter.JumpCount8H, pattern.jumpCountList[3]):
-            return
+           return
         if rules.ControlClamp(AP.AdjustableParameter.JumpCount24H, pattern.jumpCountList[4]):
-            return
+           return
         if rules.ControlClamp(AP.AdjustableParameter.JumpCount72H, pattern.jumpCountList[5]):
-            return
+           return
 
         if rules.ControlClamp(AP.AdjustableParameter.NetPrice1H, pattern.netPriceList[0]):
             return
@@ -474,7 +484,7 @@ class SuddenChangeHandler:
 
     def __GetCategory(self, curIndex, priceIn, pattern):
         if self.isRise:
-            if priceIn < self.reportPrice * 0.9:
+            if priceIn < self.reportPrice * 0.95:
                 for i in range(curIndex+1, len(self.dataList)):
                     ratio = self.dataList[i].lastPrice / priceIn
                     timeDiff = self.dataList[i].endIndex - self.dataList[curIndex].endIndex
@@ -524,8 +534,11 @@ class SuddenChangeMerger:
         self.peakHelperList = []
         self.transactionParam = transactionParam
         self.marketState = marketState
+        print("Alert2: ")
+
 
     def AddFile(self, jsonIn, fileName):
+        tempHandlers = []
         for index in range(len(jsonIn)):
             if not jsonIn[index]:
                 continue
@@ -533,7 +546,9 @@ class SuddenChangeMerger:
             jsonPeakTrans = jsonIn[index]
 
             handler = SuddenChangeHandler(jsonPeakTrans,self.transactionParam,self.marketState,fileName)
-            self.handlerList.append(handler)
+            tempHandlers.append(handler)
+        return tempHandlers
+
 
     def Finalize(self):
         for peak in self.handlerList:
@@ -586,7 +601,7 @@ class SuddenChangeMerger:
 
         buyList = np.array(self.patternList)
         badList = np.array(self.badPatternList)
-        print("Good count: ", len(self.patternList), "Bad Count" , len(self.badPatternList))
+        print("Good count: ", len(self.patternList), "Bad Count", len(self.badPatternList))
 
         for i in range(len(self.patternList[0])):
             if not AP.IsTraining:
@@ -621,7 +636,7 @@ class SuddenChangeMerger:
             for i in range(len(self.patternList[0])):
                 curRules = rules.GetRulesWithIndex(i)
                 for rule in curRules:
-                    rule.SetEliminationCounts(buyList[:, i], badList[:, i], 0.05)
+                    rule.SetEliminationCounts(buyList[:, i], badList[:, i], 0.1)
                     rule.Print()
 
             isBadCountBigger = rules.SelectBestQuantile()
@@ -653,7 +668,6 @@ class SuddenChangeMerger:
         for pattern in handler.keepList:
             self.keepList.append(pattern.GetFeatures(rules))
 
-
 class SuddenChangeManager:
 
     def __init__(self, transactionParamList):
@@ -673,6 +687,7 @@ class SuddenChangeManager:
                 self.CreateSuddenChangeMergers()
                 self.FeedChangeMergers()
                 self.FinalizeMergers()
+
 
     def FeedMarketState(self):
         jumpDataFolderPath = os.path.abspath(os.getcwd()) + "/Data/JumpData/"
@@ -712,22 +727,29 @@ class SuddenChangeManager:
         self.marketState.sort()
         print("Total rise: ", riseCount, " total down: ", downCount)
 
+    def ReadFile(self, fileName):
+        jumpDataFolderPath = os.path.abspath(os.getcwd()) + "/Data/JumpData/"
+        if AP.IsTraining:
+            jumpDataFolderPath = os.path.abspath(os.getcwd()) + "/Data/TestData/"
+        print("Reading Jump", jumpDataFolderPath + fileName, " ")
+        file = open(jumpDataFolderPath + fileName, "r")
+        # try:
+        jsonDictionary = json.load(file)
+        return self.suddenChangeMergerList[0].AddFile(jsonDictionary, fileName)
+
+        # except Exception as e:
+        #    print("There was a exception in ", fileName, e )
+        #if IsOneFileOnly:
+        #    break
     def FeedChangeMergers(self):
         jumpDataFolderPath = os.path.abspath(os.getcwd()) + "/Data/JumpData/"
         if AP.IsTraining:
             jumpDataFolderPath = os.path.abspath(os.getcwd()) + "/Data/TestData/"
         onlyJumpFiles = [f for f in listdir(jumpDataFolderPath) if isfile(join(jumpDataFolderPath, f))]
-        for fileName in onlyJumpFiles:
-            print("Reading Jump", jumpDataFolderPath + fileName, " ")
-            file = open(jumpDataFolderPath + fileName, "r")
-            #try:
-            jsonDictionary = json.load(file)
-            for merger in self.suddenChangeMergerList:
-                merger.AddFile(jsonDictionary, fileName)
-            #except Exception as e:
-            #    print("There was a exception in ", fileName, e )
-            if IsOneFileOnly:
-                break
+        lock = multiprocessing.Lock()
+        pool_obj = multiprocessing.Pool(initializer=init_pool_processes, initargs=(lock,))
+        for handlerList in pool_obj.map(self.ReadFile, onlyJumpFiles):
+            self.suddenChangeMergerList[0].handlerList.extend(handlerList)
 
     def toTransactionFeaturesNumpy(self, index):
         return self.suddenChangeMergerList[index].toTransactionFeaturesNumpy()
@@ -744,6 +766,8 @@ class SuddenChangeManager:
     def FinalizeMergers(self):
         for transactionIndex in range(len(self.transParamList)):
             self.suddenChangeMergerList[transactionIndex].Finalize()
+        #for transactionIndex in range(len(self.transParamList)):
+        #    self.suddenChangeMergerList[transactionIndex].Finalize()
 
     def CreateSuddenChangeMergers(self):
         for transactionIndex in range(len(self.transParamList)):

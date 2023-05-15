@@ -5,14 +5,14 @@ import json
 IsTeaching = False
 IsTraining = True
 
-
-IsTrained = False
+IsShortTerm = False
+IsTrained = True
 TotalStrikeCount = 0
 if not IsTeaching:
-    TotalStrikeCount = 1000
+    TotalStrikeCount = 2
 
 if IsTraining:
-    TotalStrikeCount = 10
+    TotalStrikeCount = 5
 class AdjustableParameter(Enum):
     TotalBuyCount0 = "TotalBuyCount0"
     TotalSellCount0 = "TotalSellCount0"
@@ -142,6 +142,7 @@ class Rule:
         self.tuneCount = 0
         self.isNonZero = "NonZero" in self.tags
         self.isTransaction = "Transaction" in self.tags
+        self.isShortTerm = self.isTransaction or "NetPrice" in self.tags or "Detail" in self.tags
         if self.adjustableParameter == "PowerRatio0":
             self.isTuned = True
         if IsTeaching and not IsTraining:
@@ -248,6 +249,8 @@ class RuleList:
 
     def Control(self, parameter, checkType, val):
         rule = self.GetRule(parameter, checkType)
+        if IsShortTerm and not rule.isShortTerm:
+            return False
         result = rule.Check(val)
         if result:
             self.strikeCount += 1
@@ -265,6 +268,10 @@ class RuleList:
         for rule in self.ruleList:
             if rule.adjustableParameter == self.lastSelectedRule:
                 continue
+
+            if IsShortTerm and not rule.isShortTerm:
+                continue
+
             curVal = rule.badCount - (rule.goodCount*5)
             if curVal > bestVal and not rule.isTuned and rule.tuneCount <= 3 :
                 bestVal = curVal
@@ -294,18 +301,24 @@ class RuleList:
             if rule.adjustableParameter == parameter.name:
                 rule.index = index
     def ControlClamp(self, parameter, val):
+
+
         ruleSmall = self.GetRule(parameter, CheckType.Small)
         ruleBig = self.GetRule(parameter, CheckType.Big)
-
+        if IsShortTerm and not ruleSmall.isShortTerm:
+            return False
         result = ruleSmall.Check(val) or ruleBig.Check(val)
         if result:
             self.strikeCount += 1
+
         return self.strikeCount > TotalStrikeCount
 
     def ControlIndex(self, index, checkType, val):
         if checkType != CheckType.Small:
             index += 1
         rule = self.ruleList[index]
+        if IsShortTerm and not rule.isShortTerm:
+            return False
         result = rule.Check(val)
         if result:
             self.strikeCount += 1
@@ -314,6 +327,8 @@ class RuleList:
 
     def ControlClampIndex(self, index, val):
         ruleSmall = self.ruleList[index]
+        if IsShortTerm and not ruleSmall.isShortTerm:
+            return False
         ruleBig = self.ruleList[index + 1]
         result = ruleSmall.Check(val) or ruleBig.Check(val)
         if result:
@@ -323,6 +338,8 @@ class RuleList:
 
     def ControlClampIndexDivider(self, index, val, divider):
         ruleSmall = self.ruleList[index]
+        if IsShortTerm and not ruleSmall.isShortTerm:
+            return False
         ruleBig = self.ruleList[index + 1]
         result = ruleSmall.CheckDivider(val, divider) or ruleBig.CheckDivider(val, divider)
         if result:
