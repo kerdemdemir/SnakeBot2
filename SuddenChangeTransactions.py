@@ -55,6 +55,7 @@ class SuddenChangeHandler:
         self.isAfterBuyRecord = fileName.startswith("Positive")
         self.smallestStrikeCount = 1000
         self.bestPattern = None
+        self.averageVolume = 0.0
 
         self.jumpState = []
         if self.__Parse(jsonIn) == -1:
@@ -171,8 +172,8 @@ class SuddenChangeHandler:
 
         self.reportTimeInSeconds = (datetime_object - epoch).total_seconds()
 
-
-
+        if "avarageVolume" in jsonIn:
+            self.averageVolume = jsonIn["avarageVolume"]
         self.riseList = jsonIn["riseList"]
         self.timeList = jsonIn["timeList"]
         self.priceList = jsonIn["priceList"]
@@ -342,25 +343,13 @@ class SuddenChangeHandler:
         k = 0
         rules.strikeCount = 0
         for i in range(len(pattern.transactionBuyList)):
-            if rules.ControlClampIndex(k,pattern.transactionBuyList[i]):
+            if rules.ControlClampIndex(k,pattern.transactionBuyList[i]+pattern.transactionSellList[i]):
                 return
             k+=2
-            if rules.ControlClampIndex(k, pattern.transactionSellList[i]):
+            if rules.ControlClampIndex(k, pattern.TotalPower(i)):
                 return
             k+=2
-            if rules.ControlClampIndex(k, pattern.transactionBuyPowerList[i]):
-                return
-            k+=2
-            if rules.ControlClampIndex(k, pattern.transactionSellPowerList[i]):
-                return
-            k+=2
-            if rules.ControlClampIndexDivider(k, pattern.transactionBuyPowerList[i], pattern.transactionBuyPowerList[0]):
-                return
-            k+=2
-            if rules.ControlClampIndex(k, pattern.minMaxPriceList[i]):
-                return
-            k+=2
-            if rules.ControlClampIndex(k, pattern.firstLastPriceList[i]):
+            if rules.ControlClampIndexDivider(k, pattern.TotalPower(i), pattern.TotalPower(0)):
                 return
             k+=2
             if rules.ControlClampIndex(k, pattern.ratioFirstToJump[i]):
@@ -636,7 +625,7 @@ class SuddenChangeMerger:
             for i in range(len(self.patternList[0])):
                 curRules = rules.GetRulesWithIndex(i)
                 for rule in curRules:
-                    rule.SetEliminationCounts(buyList[:, i], badList[:, i], 0.1)
+                    rule.SetEliminationCounts(buyList[:, i], badList[:, i], 0.05)
                     rule.Print()
 
             isBadCountBigger = rules.SelectBestQuantile()

@@ -8,7 +8,7 @@ import AdjustParameters as AP
 
 PeakFeatureCount = 6
 MaximumSampleSizeFromPattern = 30
-MaximumSampleSizeFromGoodPattern = 1
+MaximumSampleSizeFromGoodPattern = 30
 TransactionCountPerSecBase = 3
 TransactionLimitPerSecBase = 0.1
 TotalPowerLimit = 0.5
@@ -525,25 +525,24 @@ class TransactionPattern:
             self.transactionCount += elem.transactionBuyCount
             self.totalTransactionCount += elem.totalTransactionCount
 
+    def TotalPower(self, i):
+        return self.transactionBuyPowerList[i]+self.transactionSellPowerList[i]
 
     def GetFeatures(self, ruleList):
         returnList = []
 
         for i in range(len(self.transactionBuyList)):
-            returnList.append(self.transactionBuyList[i])
-            returnList.append(self.transactionSellList[i])
-            returnList.append(self.transactionBuyPowerList[i])
-            returnList.append(self.transactionSellPowerList[i])
-            if self.transactionBuyList[0]:
-                returnList.append(self.transactionBuyPowerList[i]/self.transactionBuyPowerList[0])
+            returnList.append(self.transactionBuyList[i]+self.transactionSellList[i])
+            returnList.append(self.TotalPower(i))
+
+            if self.TotalPower(0):
+                returnList.append(self.TotalPower(i)/self.TotalPower(0))
             else:
-                returnList.append( self.transactionBuyPowerList[i] / 0.0000001 )
-            returnList.append(self.minMaxPriceList[i])
-            returnList.append(self.firstLastPriceList[i])
+                returnList.append( self.TotalPower(0) / 0.0000001 )
             returnList.append(self.ratioFirstToJump[i])
             returnList.append(self.buySellRatio[i])
 
-        index = len(self.transactionBuyList)*9
+        index = len(self.transactionBuyList)*5
         returnList.append(self.detailLen)
         ruleList.SetIndex(AP.AdjustableParameter.DetailLen, index)
         index+=1

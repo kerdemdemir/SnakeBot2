@@ -9,10 +9,10 @@ IsShortTerm = False
 IsTrained = True
 TotalStrikeCount = 0
 if not IsTeaching:
-    TotalStrikeCount = 2
+    TotalStrikeCount = 0
 
 if IsTraining:
-    TotalStrikeCount = 5
+    TotalStrikeCount = 0
 class AdjustableParameter(Enum):
     TotalBuyCount0 = "TotalBuyCount0"
     TotalSellCount0 = "TotalSellCount0"
