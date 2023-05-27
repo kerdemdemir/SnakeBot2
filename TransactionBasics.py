@@ -169,8 +169,10 @@ class TransactionData:
         self.minPrice = 1000.0
         self.startIndex = 0
         self.endIndex = 0
-
-
+        self.buyWall = 0.0
+        self.sellWall = 0.0
+        self.buyLongWall = 0.0
+        self.sellLongWall = 0.0
     def __repr__(self):
         return "TotalBuy:%f,TotalSell:%f,TransactionCount:%f,Score:%f,LastPrice:%f,Time:%d" % (
         self.totalBuy, self.totalSell,
@@ -197,6 +199,13 @@ class TransactionData:
         self.maxPrice = max(self.lastPrice, self.maxPrice)
         self.minPrice = min(self.lastPrice, self.minPrice)
         self.totalTransactionCount += 1
+        if "d" in jsonIn :
+            buyList = jsonIn["d"].split(",")
+            self.buyWall += float(buyList[0])
+            self.sellWall += float(buyList[1])
+            self.buyLongWall += float(buyList[2])
+            self.sellLongWall += float(buyList[3])
+
         if not isSell:
             self.transactionBuyCount += 1
             self.totalBuy += power
@@ -208,6 +217,12 @@ class TransactionData:
         self.totalTransactionCount /= dividor
         self.totalSell /= dividor
         self.totalBuy /= dividor
+
+        if self.totalTransactionCount > 0 :
+            self.buyWall /= self.totalTransactionCount
+            self.sellWall /= self.totalTransactionCount
+            self.buyLongWall /= self.totalTransactionCount
+            self.sellLongWall /= self.totalTransactionCount
 
     def CombineData(self, otherData):
         self.totalTransactionCount += otherData.totalTransactionCount
@@ -321,7 +336,12 @@ class TransactionPattern:
         self.after10MinMin = 1.0
         self.after10MinLast = 1.0
 
+        self.buyWall = 0.0
+        self.sellWall = 0.0
+        self.buyLongWall = 0.0
+        self.sellLongWall = 0.0
 
+        self.averageVolume = 0.0
     def UpdatePrice(self, timeDiff, priceRatio ):
         if timeDiff < 60 :
             self.after1MinMin = min(self.after1MinMin, priceRatio)
@@ -370,6 +390,7 @@ class TransactionPattern:
         buyPowerList = list(map(lambda x: x.totalBuy, detailedTransactionList))
         buyCountList = list(map(lambda x: x.transactionBuyCount, detailedTransactionList))
         buySellList = list(map(lambda x: x.totalSell, detailedTransactionList))
+
         self.detailLen = len(buyPowerList)
 
         self.maxDetailBuyCount = max(buyCountList)
@@ -471,13 +492,20 @@ class TransactionPattern:
         self.lastRatio = self.peaks[-1]
         self.isAvoidPeaks = False
 
-    def Append(self, dataList, peakTime, jumpPrice, marketState):
+    def Append(self, dataList, averageVolume, peakTime, jumpPrice, marketState):
 
         lastTime = dataList[-1].timeInSecs
         if marketState:
             self.marketStateList = marketState.getState(lastTime)
         else:
             self.marketStateList = []
+
+        self.buyWall = dataList[-1].buyWall
+        self.sellWall = dataList[-1].sellWall
+        self.buyLongWall = dataList[-1].buyLongWall
+        self.sellLongWall = dataList[-1].sellLongWall
+        self.averageVolume = averageVolume
+
 
         for elem in dataList:
             self.transactionBuyList.append(elem.transactionBuyCount)
@@ -549,6 +577,26 @@ class TransactionPattern:
 
         returnList.append(self.maxDetailBuyPower)
         ruleList.SetIndex(AP.AdjustableParameter.MaxPowInDetail, index)
+        index += 1
+
+        returnList.append(self.buyWall)
+        ruleList.SetIndex(AP.AdjustableParameter.BuyWall, index)
+        index += 1
+
+        returnList.append(self.sellWall)
+        ruleList.SetIndex(AP.AdjustableParameter.SellWall, index)
+        index += 1
+
+        returnList.append(self.buyLongWall)
+        ruleList.SetIndex(AP.AdjustableParameter.BuyLongWall, index)
+        index += 1
+
+        returnList.append(self.sellLongWall)
+        ruleList.SetIndex(AP.AdjustableParameter.SellLongWall, index)
+        index += 1
+
+        returnList.append(self.averageVolume)
+        ruleList.SetIndex(AP.AdjustableParameter.AverageVolume, index)
         index += 1
 
         returnList.append(self.lastDownRatio)

@@ -338,7 +338,7 @@ class SuddenChangeHandler:
         moreDetailDataList = []
         self.__DivideDataInSeconds(jsonIn, 100, moreDetailDataList, self.dataList[curIndex].startIndex, self.dataList[curIndex].endIndex+1)
         pattern.SetDetailedTransaction(moreDetailDataList, dataRange)
-        pattern.Append( dataRange, self.jumpTimeInSeconds, self.jumpPrice, self.marketState)
+        pattern.Append( dataRange, self.averageVolume, self.jumpTimeInSeconds, self.jumpPrice, self.marketState)
 
         k = 0
         rules.strikeCount = 0
@@ -364,6 +364,18 @@ class SuddenChangeHandler:
         if rules.ControlClamp(AP.AdjustableParameter.MaxPowInDetail, pattern.maxDetailBuyPower):
             return
 
+        if rules.ControlClamp(AP.AdjustableParameter.BuyWall, pattern.buyWall):
+            return
+        if rules.ControlClamp(AP.AdjustableParameter.SellWall, pattern.sellWall):
+            return
+
+        if rules.ControlClamp(AP.AdjustableParameter.BuyLongWall, pattern.buyLongWall):
+            return
+        if rules.ControlClamp(AP.AdjustableParameter.SellLongWall, pattern.sellLongWall):
+            return
+
+        if rules.ControlClamp(AP.AdjustableParameter.AverageVolume, pattern.averageVolume):
+            return
 
         if rules.ControlClamp(AP.AdjustableParameter.DownPeakRatio0, pattern.lastDownRatio):
            return

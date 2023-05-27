@@ -12,7 +12,7 @@ if not IsTeaching:
     TotalStrikeCount = 0
 
 if IsTraining:
-    TotalStrikeCount = 0
+    TotalStrikeCount = 1000
 class AdjustableParameter(Enum):
     TotalBuyCount0 = "TotalBuyCount0"
     TotalSellCount0 = "TotalSellCount0"
@@ -62,6 +62,11 @@ class AdjustableParameter(Enum):
     PeakCount1H = "PeakCount1H"
     DetailLen = "DetailLen"
     MaxPowInDetail = "MaxPowInDetail"
+    BuyWall = "BuyWall"
+    SellWall = "SellWall"
+    BuyLongWall = "BuyLongWall"
+    SellLongWall = "SellLongWall"
+    AverageVolume = "AverageVolume"
     DayPriceAnalysis = "DayPriceAnalysis"
     DownPeakRatio0 = "DownPeakRatio0"
     DownPeakRatio1 = "DownPeakRatio1"
