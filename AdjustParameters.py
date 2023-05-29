@@ -1,6 +1,8 @@
 from enum import Enum
 import numpy as np
 import json
+from datetime import datetime
+
 
 IsTeaching = False
 IsTraining = True
@@ -12,7 +14,7 @@ if not IsTeaching:
     TotalStrikeCount = 0
 
 if IsTraining:
-    TotalStrikeCount = 1000
+    TotalStrikeCount = 1
 class AdjustableParameter(Enum):
     TotalBuyCount0 = "TotalBuyCount0"
     TotalSellCount0 = "TotalSellCount0"
@@ -26,14 +28,9 @@ class AdjustableParameter(Enum):
     TotalSellCount2 = "TotalSellCount2"
     TotalBuyPower2 = "TotalBuyPower2"
     TotalSellPower2 = "TotalSellPower2"
-    TotalBuyCount3 = "TotalBuyCount3"
-    TotalSellCount3 = "TotalSellCount3"
-    TotalBuyPower3 = "TotalBuyPower3"
-    TotalSellPower3 = "TotalSellPower3"
     PowerRatio0 = "PowerRatio0"
     PowerRatio1 = "PowerRatio1"
     PowerRatio2 = "PowerRatio2"
-    PowerRatio3 = "PowerRatio3"
     Price0 = "Price0"
     Price1 = "Price1"
     Price2 = "Price2"
@@ -66,6 +63,8 @@ class AdjustableParameter(Enum):
     SellWall = "SellWall"
     BuyLongWall = "BuyLongWall"
     SellLongWall = "SellLongWall"
+    BuyVsSellWall = "BuyVsSellWall"
+    BuyVsSellLongWall = "BuyVsSellLongWall"
     AverageVolume = "AverageVolume"
     DayPriceAnalysis = "DayPriceAnalysis"
     DownPeakRatio0 = "DownPeakRatio0"
@@ -145,11 +144,13 @@ class Rule:
         self.quitCount = 0
         self.isTuned = False
         self.tuneCount = 0
+        self.isPeakRatio = "PeakPrice" in self.tags
+        self.isLongRatio = "LongPrice" in self.tags
+        self.isSkipJumpCount = self.adjustableParameter.startswith("JumpCount") and not self.adjustableParameter.endswith("1H")
+        self.isSkipTuning = self.isPeakRatio or self.isLongRatio or self.isSkipJumpCount
         self.isNonZero = "NonZero" in self.tags
         self.isTransaction = "Transaction" in self.tags
         self.isShortTerm = self.isTransaction or "NetPrice" in self.tags or "Detail" in self.tags
-        if self.adjustableParameter == "PowerRatio0":
-            self.isTuned = True
         if IsTeaching and not IsTraining:
             if not self.isTuned:
                 self.threshold = 100000000
@@ -172,7 +173,12 @@ class Rule:
         else:
             return 0.9999
     def SetFromValue(self, list):
-        self.SetThreshold(np.amin(list) if self.IsSmall() else np.amax(list))
+        value = np.amin(list) if self.IsSmall() else np.amax(list)
+        if self.IsSmall() and value < self.threshold:
+            return
+        if not self.IsSmall() and value > self.threshold:
+            return
+        self.SetThreshold(value)
     def SetThreshold(self, val):
         self.threshold = val * self.GetThresHoldPcnt(val)
 
@@ -239,7 +245,7 @@ class RuleList:
         self.strikeCount = 0
         self.lastSelectedRule = None
 
-        file = open("/home/erdem/Documents/RuleJsonList.json", "r")
+        file = open("/home/erdem/Documents/BotOutput/RuleJsonList.json", "r")
         ruleDictionary = json.load(file)
         curIndex = 0
         for ruleJson in ruleDictionary["ruleList"]:
@@ -277,6 +283,9 @@ class RuleList:
             if IsShortTerm and not rule.isShortTerm:
                 continue
 
+            if rule.isSkipTuning:
+                continue
+
             curVal = rule.badCount - (rule.goodCount*5)
             if curVal > bestVal and not rule.isTuned and rule.tuneCount <= 3 :
                 bestVal = curVal
@@ -294,11 +303,11 @@ class RuleList:
         for rule in self.ruleList:
             jsonDict["ruleList"].append(rule.ToJson())
         parsed = json.loads(json.dumps(jsonDict))
-        fileName = "/home/erdem/Documents/RuleJsonList_" + str(self.iterationCount)  + "_" + str(goodCount) + "_" + str(badCount) + ".json"
+        fileName = "/home/erdem/Documents/BotOutput/RuleJsonList_" + str(self.iterationCount)  + "_" + str(goodCount) + "_" + str(badCount) + ".json"
         file = open(fileName, "w")
         file.write(json.dumps(parsed, indent=4))
 
-        file = open("/home/erdem/Documents/RuleJsonList.json", "w")
+        file = open("/home/erdem/Documents/BotOutput/RuleJsonList.json", "w")
         file.write(json.dumps(parsed, indent=4))
 
     def SetIndex(self, parameter, index ):

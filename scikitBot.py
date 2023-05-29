@@ -26,7 +26,7 @@ totalUsedCurveCount = 4
 isUseExtraData = False
 acceptedProbibilty = 0.7
 testRatio = 4
-transParamList = [TransactionBasics.TransactionParam(3000, 3)]
+transParamList = [TransactionBasics.TransactionParam(10000, 3)]
 
 mlpTransactionList = []
 mlpTransactionScalerList = []

@@ -247,7 +247,7 @@ class SuddenChangeHandler:
             self.dataList.reverse()
 
         if len(self.patternList) > TransactionBasics.MaximumSampleSizeFromGoodPattern:
-            if AP.IsTraining:
+            if False and AP.IsTraining:
                 self.patternList.append(self.bestPattern)
             else:
                 sorted(self.patternList, key=lambda l: l.lastPrice)
@@ -303,11 +303,12 @@ class SuddenChangeHandler:
         if startBin < 0 or curIndex > lenArray:
              return
         curPattern = self.dataList[curIndex]
-        if curPattern.totalBuy < 0.03:
+        if curPattern.totalBuy < 0.003:
             return
         if self.dataList[0].firstPrice == 0.0:
             print("wierd")
         pattern = TransactionBasics.TransactionPattern()
+
 
 
         lastPrice = curPattern.lastPrice
@@ -322,11 +323,10 @@ class SuddenChangeHandler:
                 break
 
         pattern.firstToLastRatio = self.dataList[0].firstPrice / lastPrice
-        self.__GetWithTime(jsonIn, curTimeInMiliSecs - 3000, curTimeInMiliSecs, 3)
-        dataRange = [self.__GetWithTime(jsonIn, curTimeInMiliSecs - 663000, curTimeInMiliSecs - 183000, 480),
-                     self.__GetWithTime(jsonIn, curTimeInMiliSecs - 183000, curTimeInMiliSecs - 63000, 120),
-                     self.__GetWithTime(jsonIn, curTimeInMiliSecs - 63000, curTimeInMiliSecs - 3000, 60),
-                     self.__GetWithTime(jsonIn, curTimeInMiliSecs - 3000, curTimeInMiliSecs, 3)]
+        #self.__GetWithTime(jsonIn, curTimeInMiliSecs - 10000, curTimeInMiliSecs, 10)
+        dataRange = [self.__GetWithTime(jsonIn, curTimeInMiliSecs - 610000, curTimeInMiliSecs - 130000, 480),
+                     self.__GetWithTime(jsonIn, curTimeInMiliSecs - 130000, curTimeInMiliSecs - 10000, 120),
+                     self.__GetWithTime(jsonIn, curTimeInMiliSecs - 10000, curTimeInMiliSecs, 10)]
 
         basePrice = lastPrice
         pattern.lastPrice = lastPrice
@@ -349,7 +349,7 @@ class SuddenChangeHandler:
             if rules.ControlClampIndex(k, pattern.TotalPower(i)):
                 return
             k+=2
-            if rules.ControlClampIndexDivider(k, pattern.TotalPower(i), pattern.TotalPower(0)):
+            if rules.ControlClampIndexDivider(k, pattern.TotalPower(i), self.averageVolume):
                 return
             k+=2
             if rules.ControlClampIndex(k, pattern.ratioFirstToJump[i]):
@@ -359,8 +359,6 @@ class SuddenChangeHandler:
                 return
             k+=2
 
-        if rules.ControlClamp(AP.AdjustableParameter.DetailLen, pattern.detailLen):
-            return
         if rules.ControlClamp(AP.AdjustableParameter.MaxPowInDetail, pattern.maxDetailBuyPower):
             return
 
@@ -368,7 +366,6 @@ class SuddenChangeHandler:
             return
         if rules.ControlClamp(AP.AdjustableParameter.SellWall, pattern.sellWall):
             return
-
         if rules.ControlClamp(AP.AdjustableParameter.BuyLongWall, pattern.buyLongWall):
             return
         if rules.ControlClamp(AP.AdjustableParameter.SellLongWall, pattern.sellLongWall):
@@ -395,63 +392,7 @@ class SuddenChangeHandler:
            return
 
 
-        if rules.Control(AP.AdjustableParameter.HourPriceRatioMin6, AP.CheckType.Small,  pattern.dayPriceArray[0]):
-           return
-        if rules.Control(AP.AdjustableParameter.HourPriceRatioMax6, AP.CheckType.Big  , pattern.dayPriceArray[1]):
-           return
-        if rules.Control(AP.AdjustableParameter.HourPriceRatioMin24, AP.CheckType.Small, pattern.dayPriceArray[2]):
-           return
-        if rules.Control(AP.AdjustableParameter.HourPriceRatioMax24, AP.CheckType.Big , pattern.dayPriceArray[3]):
-           return
-        if rules.Control(AP.AdjustableParameter.HourPriceRatioMin72, AP.CheckType.Small , pattern.dayPriceArray[6]):
-           return
-        if rules.Control(AP.AdjustableParameter.HourPriceRatioMax72, AP.CheckType.Big, pattern.dayPriceArray[7]):
-           return
-        if rules.Control(AP.AdjustableParameter.HourPriceRatioMin144, AP.CheckType.Small, pattern.dayPriceArray[8]):
-           return
-        if rules.Control(AP.AdjustableParameter.HourPriceRatioMax144, AP.CheckType.Big, pattern.dayPriceArray[9]):
-           return
-        if rules.Control(AP.AdjustableParameter.HourPriceRatioMin288, AP.CheckType.Small, pattern.dayPriceArray[10]):
-           return
-        if rules.Control(AP.AdjustableParameter.HourPriceRatioMax288, AP.CheckType.Big, pattern.dayPriceArray[11]):
-           return
-
-        if rules.ControlClamp(AP.AdjustableParameter.FirstToLastRaio, pattern.firstToLastRatio):
-           return
-
-        if rules.ControlClamp(AP.AdjustableParameter.PeakLast0, pattern.peaks[-1]):
-           return
-        if rules.ControlClamp(AP.AdjustableParameter.PeakLast1, pattern.peaks[-2]):
-           return
-        if rules.ControlClamp(AP.AdjustableParameter.PeakLast2, pattern.peaks[-3]):
-           return
-        if rules.ControlClamp(AP.AdjustableParameter.PeakLast3, pattern.peaks[-4]):
-           return
-        if rules.ControlClamp(AP.AdjustableParameter.PeakLast4, pattern.peaks[-5]):
-           return
-
-        if rules.ControlClamp(AP.AdjustableParameter.PeakTime0, pattern.timeList[-1]):
-           return
-        if rules.ControlClamp(AP.AdjustableParameter.PeakTime1, pattern.timeList[-2]):
-           return
-        if rules.ControlClamp(AP.AdjustableParameter.PeakTime2, pattern.timeList[-3]):
-           return
-        if rules.ControlClamp(AP.AdjustableParameter.PeakTime3, pattern.timeList[-4]):
-           return
-        if rules.ControlClamp(AP.AdjustableParameter.PeakTime4, pattern.timeList[-5]):
-           return
-
         if rules.ControlClamp(AP.AdjustableParameter.JumpCount1H, pattern.jumpCountList[0]):
-           return
-        if rules.ControlClamp(AP.AdjustableParameter.JumpCount2H, pattern.jumpCountList[1]):
-           return
-        if rules.ControlClamp(AP.AdjustableParameter.JumpCount4H, pattern.jumpCountList[2]):
-           return
-        if rules.ControlClamp(AP.AdjustableParameter.JumpCount8H, pattern.jumpCountList[3]):
-           return
-        if rules.ControlClamp(AP.AdjustableParameter.JumpCount24H, pattern.jumpCountList[4]):
-           return
-        if rules.ControlClamp(AP.AdjustableParameter.JumpCount72H, pattern.jumpCountList[5]):
            return
 
         if rules.ControlClamp(AP.AdjustableParameter.NetPrice1H, pattern.netPriceList[0]):
@@ -608,8 +549,7 @@ class SuddenChangeMerger:
             if not AP.IsTraining:
                 curRules = rules.GetRulesWithIndex(i)
                 for rule in curRules:
-                    if not rules.isTuned :
-                        rule.SetFromValue(buyList[:, i])
+                    rule.SetFromValue(buyList[:, i])
                     rule.Print()
 
             buyLegend = str(np.quantile(buyList[:, i], 0.0)) + "," + str(np.quantile(buyList[:, i], 0.1)) + "," + str(
