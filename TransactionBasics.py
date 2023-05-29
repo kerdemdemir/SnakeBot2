@@ -7,8 +7,8 @@ import statistics
 import AdjustParameters as AP
 
 PeakFeatureCount = 6
-MaximumSampleSizeFromPattern = 1
-MaximumSampleSizeFromGoodPattern = 1
+MaximumSampleSizeFromPattern = 30
+MaximumSampleSizeFromGoodPattern = 30
 TransactionCountPerSecBase = 3
 TransactionLimitPerSecBase = 0.1
 TotalPowerLimit = 0.5

@@ -577,7 +577,7 @@ class SuddenChangeMerger:
             for i in range(len(self.patternList[0])):
                 curRules = rules.GetRulesWithIndex(i)
                 for rule in curRules:
-                    rule.SetEliminationCounts(buyList[:, i], badList[:, i], 0.05)
+                    rule.SetEliminationCounts(buyList[:, i], badList[:, i], 0.15)
                     rule.Print()
 
             isBadCountBigger = rules.SelectBestQuantile()

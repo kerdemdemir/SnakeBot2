@@ -3,18 +3,19 @@ import numpy as np
 import json
 from datetime import datetime
 
-
 IsTeaching = False
 IsTraining = True
 
 IsShortTerm = False
 IsTrained = True
 TotalStrikeCount = 0
+
 if not IsTeaching:
     TotalStrikeCount = 0
 
 if IsTraining:
-    TotalStrikeCount = 1
+    TotalStrikeCount = 0
+
 class AdjustableParameter(Enum):
     TotalBuyCount0 = "TotalBuyCount0"
     TotalSellCount0 = "TotalSellCount0"
@@ -144,7 +145,7 @@ class Rule:
         self.quitCount = 0
         self.isTuned = False
         self.tuneCount = 0
-        self.isPeakRatio = "PeakPrice" in self.tags
+        self.isPeakRatio = "PeakRatio" in self.tags
         self.isLongRatio = "LongPrice" in self.tags
         self.isSkipJumpCount = self.adjustableParameter.startswith("JumpCount") and not self.adjustableParameter.endswith("1H")
         self.isSkipTuning = self.isPeakRatio or self.isLongRatio or self.isSkipJumpCount
@@ -281,6 +282,9 @@ class RuleList:
                 continue
 
             if IsShortTerm and not rule.isShortTerm:
+                continue
+
+            if rule.isSkipTuning:
                 continue
 
             if rule.isSkipTuning:
