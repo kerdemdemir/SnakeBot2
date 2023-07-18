@@ -15,7 +15,6 @@ from matplotlib import pyplot as plt
 import sys
 import multiprocessing
 from functools import partial
-from collections import set
 
 
 PeakFeatureCount = TransactionBasics.PeakFeatureCount
