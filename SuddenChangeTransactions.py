@@ -15,20 +15,60 @@ from matplotlib import pyplot as plt
 import sys
 import multiprocessing
 from functools import partial
+from collections import set
+
 
 PeakFeatureCount = TransactionBasics.PeakFeatureCount
+
 percent = 0.01
 IsOneFileOnly = False
 totalCounter = 0
 rules = AP.RuleList()
 
-
 def init_pool_processes(the_lock):
     global lock
     lock = the_lock
 
-class SuddenChangeHandler:
+class EliminatedList:
+    def __init__(self):
+        self.eliminatedSet = set()
 
+    def AddEliminated(self, name, reportTime):
+        key = str(name) + str(reportTime)
+        self.eliminatedSet.add(str(key))
+
+    def IsEliminated(self, name, reportTime):
+        key = str(name) + str(reportTime)
+        return key in self.eliminatedSet
+
+class MissingData:
+
+    def __init__(self, preciseData, averageVol):
+        self.precisePriceData = [float(num) for num in preciseData.split(",")]
+        self.averageVol = averageVol
+class MissingDataReader:
+    def __init__(self):
+        file = open("/home/erdem/Documents/outputExtras.txt", "r")
+        self.dataDict = {}
+        for line in file.readlines():
+            datalist = line.split(';')
+            key = datalist[0].split(":")[1]
+            missingData = MissingData(datalist[3].split(":")[1], datalist[2].split(":")[1])
+            self.dataDict[key] = missingData
+
+    def isKeyExists(self, currencyName, timeInSeconds):
+        key = currencyName+str(int(timeInSeconds))
+        if key in self.dataDict:
+            return True
+        return False
+    def getMissingData(self, currencyName, timeInSeconds):
+        key = currencyName+str(int(timeInSeconds))
+        return self.dataDict[key]
+
+missingDataReader = MissingDataReader()
+eliminatedList = EliminatedList()
+
+class SuddenChangeHandler:
     def __init__(self, jsonIn, transactionParam,marketState, fileName):
         self.marketState = marketState
         self.jumpTimeInSeconds = 0
@@ -38,6 +78,7 @@ class SuddenChangeHandler:
         self.transactions = []
         self.maxMinList = []
         self.riseList = []
+        self.halfHourPriceList = []
         self.timeList = []
         self.currencyName = ""
         self.isRise = False
@@ -58,13 +99,14 @@ class SuddenChangeHandler:
         self.averageVolume = 0.0
 
         self.jumpState = []
+
         if self.__Parse(jsonIn) == -1:
             return
-        #if self.isAfterBuyRecord and self.isRise :
-        #    return
-        #if self.isAfterBuyRecord :
-        #    if self.jumpPrice/self.reportPrice>1.0:
-        #        return
+        if self.isAfterBuyRecord and self.isRise:
+            if self.reportPrice/self.jumpPrice < 1.03:
+                return
+        if eliminatedList.IsEliminated(self.currencyName, self.reportTimeInSeconds):
+            return
 
         self.lowestTransaction = TransactionBasics.TransactionCountPerSecBase
         self.acceptedTransLimit = TransactionBasics.TransactionLimitPerSecBase
@@ -80,42 +122,6 @@ class SuddenChangeHandler:
         elif diffTime > 60*25:
             self.jumpTimeInSeconds -= 60*60
             self.reportTimeInSeconds -= 60*60
-
-        self.minIndex = 0
-        self.maxIndex = 0
-        self.maxPrice = 0
-        self.minPrice = 1000
-        for index in range(len(tempTransaction)):
-            transaction = tempTransaction[index]
-            curTimeInSeconds = int(transaction["T"]) // 1000
-            curPrice = float(transaction["p"])
-            if curTimeInSeconds < self.jumpTimeInSeconds - 10 or curTimeInSeconds > self.reportTimeInSeconds+10:
-                continue
-            if curPrice <= self.minPrice:
-                self.minPrice = curPrice
-                self.minIndex = index
-                self.minTime = curTimeInSeconds
-            if curPrice >= self.maxPrice:
-                self.maxPrice = curPrice
-                self.maxIndex = index
-                self.maxTime = curTimeInSeconds
-
-        if self.isRise:
-            self.peakIndex = self.minIndex
-        else:
-            self.peakIndex = self.maxIndex
-
-        self.peakTime = int(tempTransaction[self.peakIndex]["T"])//1000
-        self.peakVal = float(tempTransaction[self.peakIndex]["p"])
-
-        if self.timeList[-1] < 2.0:
-            self.timeList = self.timeList[:-1]
-            self.riseList = self.riseList[:-1]
-            if self.riseList[-1] > 0.0 :
-                self.riseList[-1] = (self.jumpPrice/self.priceList[-3]-1.0 )*100.0
-            else:
-                self.riseList[-1] = (-self.jumpPrice/self.priceList[-3]+1.0)*100.0
-
 
         self.__DivideDataInSeconds(tempTransaction, self.transactionParam.msec, self.dataList, 0, len(tempTransaction)) #populates the dataList with TransactionData
         self.__AppendToPatternList(tempTransaction) # deletes dataList and populates mustBuyList, patternList badPatternList
@@ -163,17 +169,20 @@ class SuddenChangeHandler:
         datetime_object = datetime.strptime(jsonIn["reportTime"].split(".")[0], '%Y-%b-%d %H:%M:%S')
         now = datetime.now()
 
-        if (now - datetime_object).total_seconds() < 60*60*24*1:
-            self.multiplier = 6
-        elif (now - datetime_object).total_seconds() < 60*60*24*3:
-            self.multiplier = 3
-        elif (now - datetime_object).total_seconds() < 60*60*24*7:
-            self.multiplier = 2
-
         self.reportTimeInSeconds = (datetime_object - epoch).total_seconds()
 
         if "avarageVolume" in jsonIn:
             self.averageVolume = jsonIn["avarageVolume"]
+
+        if self.averageVolume < 0.0001:
+            return -1
+
+        if AP.IsWorkingLowVolumes and self.averageVolume > 0.00045:
+            return -1
+
+        if not AP.IsWorkingLowVolumes and self.averageVolume < 0.00045:
+            return -1
+
         self.riseList = jsonIn["riseList"]
         self.timeList = jsonIn["timeList"]
         self.priceList = jsonIn["priceList"]
@@ -189,8 +198,27 @@ class SuddenChangeHandler:
         self.maxMinList = jsonIn["maxMin"]
         datetime_object = datetime.strptime(jsonIn["time"].split(".")[0], '%Y-%b-%d %H:%M:%S')
         self.jumpTimeInSeconds = (datetime_object - epoch).total_seconds()
+
         self.downUpList = jsonIn["downUps"]
         self.currencyName = jsonIn["name"]
+
+        if "precisePriceList" in jsonIn:
+            halfHourPriceListStr = str(jsonIn["precisePriceList"])
+            if halfHourPriceListStr.find(":") != -1:
+                halfHourPriceListStrList = halfHourPriceListStr.split("\', \'")
+                self.halfHourPriceList = list(map(lambda str : float(str.split(",")[2]), halfHourPriceListStrList ))
+            else :
+                halfHourPriceListStrList = halfHourPriceListStr[1:-1].split(",")
+                try:
+                    self.halfHourPriceList = list(map(float, halfHourPriceListStrList))
+                except Exception as e:
+                    print("There was a exception in half hour thingy ", halfHourPriceListStr, e)
+
+        if len(self.halfHourPriceList) < 340:
+            if not missingDataReader.isKeyExists(self.currencyName, self.jumpTimeInSeconds):
+                return -1
+            self.halfHourPriceList = missingDataReader.getMissingData(self.currencyName, self.jumpTimeInSeconds).precisePriceData
+
 
     def __DivideDataInSeconds(self, jsonIn, msecs, datalist, startIndex, endIndex ):
         transactionData = TransactionBasics.TransactionData()
@@ -240,39 +268,56 @@ class SuddenChangeHandler:
             if  curTimeInSeconds > self.reportTimeInSeconds+10:
                 continue
             lastTotalTradePower = self.dataList[x].totalBuy + self.dataList[x].totalSell
-            if lastTotalTradePower > maxTradeVal  :
+            if lastTotalTradePower > maxTradeVal:
                 maxTradeVal = lastTotalTradePower
             self.__AppendToPatternListImpl(self.transactionParam.gramCount, x, lenArray, jsonIn)
         if len(self.patternList) == 0:
             self.dataList.reverse()
 
-        if len(self.patternList) > TransactionBasics.MaximumSampleSizeFromGoodPattern:
-            if False and AP.IsTraining:
+        limit = 0
+        if AP.IsTeaching:
+            limit = TransactionBasics.MaximumSampleSizeFromPattern
+        if len(self.patternList) > limit:
+            if AP.IsTraining:
+                self.patternList.clear()
                 self.patternList.append(self.bestPattern)
             else:
-                sorted(self.patternList, key=lambda l: l.lastPrice)
-                elem = self.patternList[0]
+                randomSampleListGood = random.sample(self.patternList,
+                                                 TransactionBasics.MaximumSampleSizeFromPattern - 1)
                 self.patternList.clear()
-                for _ in range(self.multiplier):
-                    self.patternList.append(elem)
+                self.patternList = randomSampleListGood
+
 
         if len(self.badPatternList) > TransactionBasics.MaximumSampleSizeFromPattern:
             sorted(self.badPatternList, key=lambda l: l.lastPrice)
             lastPrice = self.badPatternList[-1].lastPrice
             self.badPatternList = [self.badPatternList[-1]]
-            if TransactionBasics.MaximumSampleSizeFromPattern > 1 and len(self.badPatternList) > 1 :
+            if TransactionBasics.MaximumSampleSizeFromPattern > 1 and len(self.badPatternList) > 1:
                 randomSampleList = random.sample(self.badPatternList, TransactionBasics.MaximumSampleSizeFromPattern-1)
                 for elem in randomSampleList:
                     if elem.lastPrice != lastPrice:
                         self.badPatternList.append(elem)
 
+        if self.isAfterBuyRecord:
+            self.badPatternList.extend(self.badPatternList)
+
+        if len(self.badPatternList) == 0 and len(self.patternList) == 0 :
+            eliminatedList.AddEliminated(self.currencyName, self.reportTimeInSeconds)
+
         del self.dataList
 
-    def __GetWithTime(self, jsonIn, startTime, stopTime, divider):
+    def __GetWithTime(self, jsonIn, startIndex, startTime, stopTime, divider):
         currentData = TransactionBasics.TransactionData()
 
         isFirst = True
-        for elem in jsonIn :
+        if startIndex == 0 :
+            startIndex = bisect.bisect_right(jsonIn, startTime, key=lambda x: int(x["T"]))
+            startIndex -= 1
+            if startIndex >= len(jsonIn) or startIndex < 0 :
+                startIndex = 0
+
+        for index in range(startIndex,len(jsonIn)):
+            elem = jsonIn[index]
             curTime = int(elem["T"])
             currentData.SetCurPrice(elem)
             if curTime < startTime:
@@ -283,6 +328,7 @@ class SuddenChangeHandler:
             if curTime > stopTime:
                 break
             currentData.AddData(elem)
+            currentData.endIndex = index
 
         currentData.NormalizePrice()
         if startTime < int(jsonIn[0]["T"]) :
@@ -297,48 +343,61 @@ class SuddenChangeHandler:
 
 
     def __AppendToPatternListImpl(self, ngramCount, curIndex, lenArray, jsonIn):
-        totalCount = 120
+        totalCount = 60
         startBin = curIndex + 1 - totalCount
-        endBin = curIndex + 1
         if startBin < 0 or curIndex > lenArray:
              return
         curPattern = self.dataList[curIndex]
-        if curPattern.totalBuy < 0.003:
+        if curPattern.totalBuy < 0.01:
             return
-        if self.dataList[0].firstPrice == 0.0:
-            print("wierd")
-        pattern = TransactionBasics.TransactionPattern()
 
+        pattern = TransactionBasics.TransactionPattern()
 
 
         lastPrice = curPattern.lastPrice
         currentPowSum = 0.0
         curTimeInMiliSecs = jsonIn[curPattern.endIndex]["T"]
+
+        interestTime = 1685718294000
+        if interestTime - curTimeInMiliSecs < 10000 :
+            interestTime = 0
+
         for x in range(curPattern.startIndex,curPattern.endIndex):
             if not bool(jsonIn[x]["m"]):
                 currentPowSum += float(jsonIn[x]["q"]) * float(jsonIn[x]["p"])
                 lastPrice = float(jsonIn[x]["p"])
-            if currentPowSum > 0.1:
+            if currentPowSum > 0.01:
                 curTimeInMiliSecs = jsonIn[x]["T"]
                 break
 
         pattern.firstToLastRatio = self.dataList[0].firstPrice / lastPrice
         #self.__GetWithTime(jsonIn, curTimeInMiliSecs - 10000, curTimeInMiliSecs, 10)
-        dataRange = [self.__GetWithTime(jsonIn, curTimeInMiliSecs - 610000, curTimeInMiliSecs - 130000, 480),
-                     self.__GetWithTime(jsonIn, curTimeInMiliSecs - 130000, curTimeInMiliSecs - 10000, 120),
-                     self.__GetWithTime(jsonIn, curTimeInMiliSecs - 10000, curTimeInMiliSecs, 10)]
+        firstData = self.__GetWithTime(jsonIn, 0, curTimeInMiliSecs - 610000, curTimeInMiliSecs - 130000, 480)
+        secondData = self.__GetWithTime(jsonIn, firstData.endIndex - 1, curTimeInMiliSecs - 130000, curTimeInMiliSecs - 10000, 120)
+        lastData = self.__GetWithTime(jsonIn, secondData.endIndex - 1, curTimeInMiliSecs - 10000, curTimeInMiliSecs, 10)
+        dataRange = [firstData, secondData, lastData]
 
         basePrice = lastPrice
         pattern.lastPrice = lastPrice
         ratio = basePrice/self.jumpPrice
         curTimeDiff = (self.dataList[curIndex].timeInSecs - self.jumpTimeInSeconds)//60
         pattern.timeToJump = self.reportTimeInSeconds - self.dataList[curIndex].timeInSecs
-        pattern.SetPeaks(lastPrice, self.priceList, self.riseList, self.timeList, self.maxMinList, ratio, curTimeDiff)
+        pattern.SetPeaks(lastPrice, self.halfHourPriceList, self.riseList, self.timeList, self.maxMinList, ratio, curTimeDiff)
 
         moreDetailDataList = []
         self.__DivideDataInSeconds(jsonIn, 100, moreDetailDataList, self.dataList[curIndex].startIndex, self.dataList[curIndex].endIndex+1)
         pattern.SetDetailedTransaction(moreDetailDataList, dataRange)
         pattern.Append( dataRange, self.averageVolume, self.jumpTimeInSeconds, self.jumpPrice, self.marketState)
+
+        if pattern.marketStateList[1] > 3:
+            return
+
+        if pattern.jumpCountList[0] > 3:
+            return
+
+        if pattern.peaks[-1] < 0.0:
+            if pattern.lastDownRatio < 0.0 or pattern.lastUpRatio < -1.0 or pattern.lastDownRatio2 < -1.0 or pattern.lastUpRatio2 < -1.0:
+                return
 
         k = 0
         rules.strikeCount = 0
@@ -350,9 +409,6 @@ class SuddenChangeHandler:
                 return
             k+=2
             if rules.ControlClampIndexDivider(k, pattern.TotalPower(i), self.averageVolume):
-                return
-            k+=2
-            if rules.ControlClampIndex(k, pattern.ratioFirstToJump[i]):
                 return
             k+=2
             if rules.ControlClampIndex(k, pattern.buySellRatio[i]):
@@ -374,40 +430,21 @@ class SuddenChangeHandler:
         if rules.ControlClamp(AP.AdjustableParameter.AverageVolume, pattern.averageVolume):
             return
 
-        if rules.ControlClamp(AP.AdjustableParameter.DownPeakRatio0, pattern.lastDownRatio):
+        if rules.ControlClamp(AP.AdjustableParameter.PeakTime0, pattern.timeList[-1]):
            return
-        if rules.ControlClamp(AP.AdjustableParameter.UpPeakRatio0, pattern.lastUpRatio):
-           return
-        if rules.ControlClamp(AP.AdjustableParameter.DownPeakRatio1, pattern.lastDownRatio2):
-           return
-        if rules.ControlClamp(AP.AdjustableParameter.UpPeakRatio1, pattern.lastUpRatio2):
-           return
-        if rules.ControlClamp(AP.AdjustableParameter.DownPeakRatioRise0, pattern.lastDownRatioRise):
-           return
-        if rules.ControlClamp(AP.AdjustableParameter.UpPeakRatioRise0, pattern.lastUpRatioRise):
-           return
-        if rules.ControlClamp(AP.AdjustableParameter.DownPeakRatioRise1, pattern.lastDownRatioRise2):
-           return
-        if rules.ControlClamp(AP.AdjustableParameter.UpPeakRatioRise1, pattern.lastUpRatioRise2):
-           return
-
-
-        if rules.ControlClamp(AP.AdjustableParameter.JumpCount1H, pattern.jumpCountList[0]):
+        if rules.ControlClamp(AP.AdjustableParameter.PeakTime1, pattern.timeList[-2]):
            return
 
         if rules.ControlClamp(AP.AdjustableParameter.NetPrice1H, pattern.netPriceList[0]):
             return
-        if rules.ControlClamp(AP.AdjustableParameter.NetPrice2H, pattern.netPriceList[1]):
+        if rules.ControlClamp(AP.AdjustableParameter.NetPrice8H, pattern.netPriceList[1]):
             return
-        if rules.ControlClamp(AP.AdjustableParameter.NetPrice4H, pattern.netPriceList[2]):
+        if rules.ControlClamp(AP.AdjustableParameter.NetPrice24H, pattern.netPriceList[2]):
             return
-        if rules.ControlClamp(AP.AdjustableParameter.NetPrice8H, pattern.netPriceList[3]):
+        if rules.ControlClamp(AP.AdjustableParameter.NetPrice72H, pattern.netPriceList[3]):
             return
-        if rules.ControlClamp(AP.AdjustableParameter.NetPrice24H, pattern.netPriceList[4]):
-            return
-        if rules.ControlClamp(AP.AdjustableParameter.NetPrice72H, pattern.netPriceList[5]):
-            return
-
+        #if rules.ControlClamp(AP.AdjustableParameter.MarketState, pattern.marketStateList[1]):
+        #    return
         if rules.strikeCount < self.smallestStrikeCount:
             self.bestPattern = pattern
 
@@ -445,21 +482,6 @@ class SuddenChangeHandler:
                     return -1
             return 2
 
-        return -1
-
-    def __GetCategorySell(self, curIndex):
-        price = self.dataList[curIndex].lastPrice
-        minVal = self.dataList[curIndex].minPrice
-        maxVal = self.dataList[curIndex].maxPrice
-        time = self.dataList[curIndex].timeInSecs
-
-        if self.isRise:
-            if minVal < self.peakVal * 1.03:
-                return 2  # We can keep
-
-        else:
-            if maxVal > self.peakVal * 0.995:
-                return 1 # We need to sell now
         return -1
 
 class SuddenChangeMerger:
@@ -549,7 +571,7 @@ class SuddenChangeMerger:
             if not AP.IsTraining:
                 curRules = rules.GetRulesWithIndex(i)
                 for rule in curRules:
-                    rule.SetFromValue(buyList[:, i])
+                    rule.SetFromValue(buyList[:, i], False)
                     rule.Print()
 
             buyLegend = str(np.quantile(buyList[:, i], 0.0)) + "," + str(np.quantile(buyList[:, i], 0.1)) + "," + str(
@@ -577,7 +599,7 @@ class SuddenChangeMerger:
             for i in range(len(self.patternList[0])):
                 curRules = rules.GetRulesWithIndex(i)
                 for rule in curRules:
-                    rule.SetEliminationCounts(buyList[:, i], badList[:, i], 0.15)
+                    rule.SetEliminationCounts(buyList[:, i], badList[:, i], 0.1)
                     rule.Print()
 
             isBadCountBigger = rules.SelectBestQuantile()
@@ -613,7 +635,7 @@ class SuddenChangeManager:
 
     def __init__(self, transactionParamList):
         self.marketState = MarketStateManager.MarketStateManager()
-        #self.FeedMarketState()
+        self.FeedMarketState()
 
         self.transParamList = transactionParamList
         self.suddenChangeMergerList = []
@@ -651,10 +673,6 @@ class SuddenChangeManager:
                     timeStr = jsonIn["reportTime"]
                     datetime_object = datetime.strptime(timeStr.split(".")[0], '%Y-%b-%d %H:%M:%S')
                     reportTimeInSeconds = (datetime_object - epoch).total_seconds()
-
-                    lastTimeInSeconds = int(tempTransaction[-1]["T"]) // 1000
-                    if reportTimeInSeconds - lastTimeInSeconds > 1500:
-                        reportTimeInSeconds -= 3600
                     isRise = bool(jsonIn["isRise"])
                     if isRise:
                         riseCount += 1

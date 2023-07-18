@@ -3,11 +3,11 @@ import numpy as np
 import json
 from datetime import datetime
 
-IsTeaching = False
-IsTraining = True
+IsTeaching = True
+IsTraining = not IsTeaching
 
 IsShortTerm = False
-IsTrained = True
+IsTrained = not IsTeaching
 TotalStrikeCount = 0
 
 if not IsTeaching:
@@ -15,6 +15,8 @@ if not IsTeaching:
 
 if IsTraining:
     TotalStrikeCount = 0
+
+IsWorkingLowVolumes = False
 
 class AdjustableParameter(Enum):
     TotalBuyCount0 = "TotalBuyCount0"
@@ -99,6 +101,8 @@ class AdjustableParameter(Enum):
     NetPrice8H = "NetPrice8H"
     NetPrice24H = "NetPrice24H"
     NetPrice72H = "NetPrice72H"
+    NetPrice168H = "NetPrice168H"
+    MarketState = "MarketState"
 class Tag(Enum):
     Transaction = "Transaction"
 
@@ -148,7 +152,8 @@ class Rule:
         self.isPeakRatio = "PeakRatio" in self.tags
         self.isLongRatio = "LongPrice" in self.tags
         self.isSkipJumpCount = self.adjustableParameter.startswith("JumpCount") and not self.adjustableParameter.endswith("1H")
-        self.isSkipTuning = self.isPeakRatio or self.isLongRatio or self.isSkipJumpCount
+        self.isAverageVol = self.adjustableParameter.startswith("AverageVolume")
+        self.isSkipTuning = self.isPeakRatio or self.isLongRatio or self.isSkipJumpCount or self.isAverageVol
         self.isNonZero = "NonZero" in self.tags
         self.isTransaction = "Transaction" in self.tags
         self.isShortTerm = self.isTransaction or "NetPrice" in self.tags or "Detail" in self.tags
@@ -173,8 +178,16 @@ class Rule:
             return 1.0001
         else:
             return 0.9999
-    def SetFromValue(self, list):
+    def SetFromValue(self, list, isThougher):
+
         value = np.amin(list) if self.IsSmall() else np.amax(list)
+        if isThougher:
+            if self.IsSmall():
+                value = np.quantile(list, 0.05 if self.IsSmall() else 1.0 - 0.05)
+            else:
+                value = np.quantile(list, 0.05 if self.IsSmall() else 1.0 - 0.05)
+
+
         if self.IsSmall() and value < self.threshold:
             return
         if not self.IsSmall() and value > self.threshold:
@@ -212,7 +225,7 @@ class Rule:
                 smallerList = flattened1D[flattened1D < maxVal]
                 if smallerList.size != 0:
                     goodValue = smallerList[-1]
-            self.badCount = np.count_nonzero(compareList > goodValue) / compareList.size
+            self.badCount = np.count_nonzero(compareList >= goodValue) / compareList.size
             self.goodCount = np.count_nonzero(list > goodValue) / list.size
 
         self.quantileVal = goodValue
@@ -227,7 +240,7 @@ class Rule:
         return returnVal
     def Print(self):
         print( str(self.adjustableParameter), "its value is: ", self.threshold, "small: ", self.IsSmall(),
-               "badCount: ", self.badCount, "goodCount: ", self.goodCount, "quitCount: ", self.quitCount  )
+               "Eliminated bad ratio: ", self.badCount, "eliminated good ratio: ", self.goodCount, "quitCount: ", self.quitCount  )
 
     def CheckDivider(self, first, divider):
         if CheckType.Small == self.checkType or CheckType.Big == self.checkType:
@@ -287,10 +300,7 @@ class RuleList:
             if rule.isSkipTuning:
                 continue
 
-            if rule.isSkipTuning:
-                continue
-
-            curVal = rule.badCount - (rule.goodCount*5)
+            curVal = rule.badCount - rule.goodCount
             if curVal > bestVal and not rule.isTuned and rule.tuneCount <= 3 :
                 bestVal = curVal
                 selectedRule = rule
@@ -307,7 +317,9 @@ class RuleList:
         for rule in self.ruleList:
             jsonDict["ruleList"].append(rule.ToJson())
         parsed = json.loads(json.dumps(jsonDict))
-        fileName = "/home/erdem/Documents/BotOutput/RuleJsonList_" + str(self.iterationCount)  + "_" + str(goodCount) + "_" + str(badCount) + ".json"
+        volumeText = "LowVolume" if IsWorkingLowVolumes else "HighVolume"
+        fileName = "/home/erdem/Documents/BotOutput/RuleJsonList_" + str(self.iterationCount)  + "_" + str(goodCount) + "_" + \
+                   str(badCount) + "_" + volumeText + ".json"
         file = open(fileName, "w")
         file.write(json.dumps(parsed, indent=4))
 

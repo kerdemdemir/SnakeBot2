@@ -8,7 +8,7 @@ import AdjustParameters as AP
 
 PeakFeatureCount = 6
 MaximumSampleSizeFromPattern = 30
-MaximumSampleSizeFromGoodPattern = 30
+MaximumSampleSizeFromGoodPattern = 60
 TransactionCountPerSecBase = 3
 TransactionLimitPerSecBase = 0.1
 TotalPowerLimit = 0.5
@@ -213,16 +213,17 @@ class TransactionData:
             self.totalSell += power
             
     def Divide(self, dividor):
-        self.transactionBuyCount /= dividor
-        self.totalTransactionCount /= dividor
-        self.totalSell /= dividor
-        self.totalBuy /= dividor
 
         if self.totalTransactionCount > 0 :
             self.buyWall /= self.totalTransactionCount
             self.sellWall /= self.totalTransactionCount
             self.buyLongWall /= self.totalTransactionCount
             self.sellLongWall /= self.totalTransactionCount
+
+        self.transactionBuyCount /= dividor
+        self.totalTransactionCount /= dividor
+        self.totalSell /= dividor
+        self.totalBuy /= dividor
 
     def CombineData(self, otherData):
         self.totalTransactionCount += otherData.totalTransactionCount
@@ -426,8 +427,8 @@ class TransactionPattern:
     def SetPeaks(self, curPrice, priceList, peakList, timeList, minMaxDay, ratio, timeDif ):
 
         self.jumpCountList = [self.GetCount(timeList,60), self.GetCount(timeList, 60 * 2), self.GetCount(timeList, 60 * 4), self.GetCount(timeList, 60 * 8 ), self.GetCount(timeList, 60 * 24 ), self.GetCount(timeList, 60 * 72 )]
-        self.netPriceList = [self.GetPrice(curPrice, priceList, timeList, 60), self.GetPrice(curPrice, priceList, timeList, 60 * 2), self.GetPrice(curPrice, priceList, timeList, 60 * 4),
-                             self.GetPrice(curPrice, priceList, timeList, 60 * 8 ), self.GetPrice(curPrice, priceList, timeList, 60 * 24 ), self.GetPrice(curPrice, priceList, timeList, 60 * 72 )]
+        self.netPriceList = [curPrice/priceList[-2], curPrice/priceList[-16], curPrice/priceList[-48], curPrice/priceList[-144],  curPrice/priceList[-336]]
+
 
         if PeakFeatureCount > 0:
             self.peaks = copy.deepcopy(peakList[-10:])
@@ -484,10 +485,14 @@ class TransactionPattern:
             self.lastDownRatio2 = self.peaks[-3]+self.peaks[-4]
             self.lastUpRatio2 = self.peaks[-4] + self.peaks[-5]
         else:
-            self.lastDownRatioRise = self.peaks[-2]+self.peaks[-3]
-            self.lastUpRatioRise = self.peaks[-1] + self.peaks[-2]
-            self.lastDownRatioRise2 = self.peaks[-4]+self.peaks[-5]
-            self.lastUpRatioRise2 = self.peaks[-3] + self.peaks[-4]
+            #self.lastDownRatioRise = self.peaks[-2]+self.peaks[-3]
+            #self.lastUpRatioRise = self.peaks[-1] + self.peaks[-2]
+            #self.lastDownRatioRise2 = self.peaks[-4]+self.peaks[-5]
+            #self.lastUpRatioRise2 = self.peaks[-3] + self.peaks[-4]
+            self.lastDownRatioRise = self.peaks[-1]
+            self.lastUpRatioRise = self.peaks[-2]
+            self.lastDownRatioRise2 = self.peaks[-3]
+            self.lastUpRatioRise2 = self.peaks[-4]
 
         self.lastRatio = self.peaks[-1]
         self.isAvoidPeaks = False
@@ -496,7 +501,7 @@ class TransactionPattern:
 
         lastTime = dataList[-1].timeInSecs
         if marketState:
-            self.marketStateList = marketState.getState(lastTime)
+            self.marketStateList = marketState.getState(peakTime)
         else:
             self.marketStateList = []
 
@@ -563,10 +568,9 @@ class TransactionPattern:
             returnList.append(self.transactionBuyList[i]+self.transactionSellList[i])
             returnList.append(self.TotalPower(i))
             returnList.append(self.TotalPower(i)/self.averageVolume)
-            returnList.append(self.ratioFirstToJump[i])
             returnList.append(self.buySellRatio[i])
 
-        index = len(self.transactionBuyList)*5
+        index = len(self.transactionBuyList)*4
         #returnList.append(self.detailLen)
         #ruleList.SetIndex(AP.AdjustableParameter.DetailLen, index)
         #index+=1
@@ -595,62 +599,28 @@ class TransactionPattern:
         ruleList.SetIndex(AP.AdjustableParameter.AverageVolume, index)
         index += 1
 
-        returnList.append(self.lastDownRatio)
-        ruleList.SetIndex(AP.AdjustableParameter.DownPeakRatio0, index)
+        returnList.append(self.timeList[-1])
+        ruleList.SetIndex(AP.AdjustableParameter.PeakTime0, index)
         index += 1
 
-        returnList.append(self.lastUpRatio)
-        ruleList.SetIndex(AP.AdjustableParameter.UpPeakRatio0, index)
-        index += 1
-
-        returnList.append(self.lastDownRatioRise)
-        ruleList.SetIndex(AP.AdjustableParameter.DownPeakRatioRise0, index)
-        index += 1
-
-        returnList.append(self.lastUpRatioRise)
-        ruleList.SetIndex(AP.AdjustableParameter.UpPeakRatioRise0, index)
-        index += 1
-
-        returnList.append(self.lastDownRatio2)
-        ruleList.SetIndex(AP.AdjustableParameter.DownPeakRatio1, index)
-        index += 1
-
-        returnList.append(self.lastUpRatio2)
-        ruleList.SetIndex(AP.AdjustableParameter.UpPeakRatio1, index)
-        index += 1
-
-        returnList.append(self.lastDownRatioRise2)
-        ruleList.SetIndex(AP.AdjustableParameter.DownPeakRatioRise1, index)
-        index += 1
-
-        returnList.append(self.lastUpRatioRise2)
-        ruleList.SetIndex(AP.AdjustableParameter.UpPeakRatioRise1, index)
-        index += 1
-
-        returnList.append(self.jumpCountList[0])
-        ruleList.SetIndex(AP.AdjustableParameter.JumpCount1H, index)
+        returnList.append(self.timeList[-2])
+        ruleList.SetIndex(AP.AdjustableParameter.PeakTime1, index)
         index += 1
 
         returnList.append(self.netPriceList[0])
         ruleList.SetIndex(AP.AdjustableParameter.NetPrice1H, index)
         index += 1
         returnList.append(self.netPriceList[1])
-        ruleList.SetIndex(AP.AdjustableParameter.NetPrice2H, index)
-        index += 1
-        returnList.append(self.netPriceList[2])
-        ruleList.SetIndex(AP.AdjustableParameter.NetPrice4H, index)
-        index += 1
-        returnList.append(self.netPriceList[3])
         ruleList.SetIndex(AP.AdjustableParameter.NetPrice8H, index)
         index += 1
-        returnList.append(self.netPriceList[4])
+        returnList.append(self.netPriceList[2])
         ruleList.SetIndex(AP.AdjustableParameter.NetPrice24H, index)
         index += 1
-        returnList.append(self.netPriceList[5])
+        returnList.append(self.netPriceList[3])
         ruleList.SetIndex(AP.AdjustableParameter.NetPrice72H, index)
         index += 1
-
-        #returnList.extend(self.marketStateList)
+        #returnList.append(self.marketStateList[1])
+        #index += 1
         #returnList.append(self.timeToJump)
 
         return returnList
