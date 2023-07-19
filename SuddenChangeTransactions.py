@@ -15,7 +15,7 @@ from matplotlib import pyplot as plt
 import sys
 import multiprocessing
 from functools import partial
-
+import threading
 
 PeakFeatureCount = TransactionBasics.PeakFeatureCount
 
@@ -30,15 +30,19 @@ def init_pool_processes(the_lock):
 
 class EliminatedList:
     def __init__(self):
-        self.eliminatedSet = set()
+        manager = multiprocessing.Manager()
+        self.eliminatedList = manager.list()
+        self.lock = multiprocessing.Lock()
 
     def AddEliminated(self, name, reportTime):
         key = str(name) + str(reportTime)
-        self.eliminatedSet.add(str(key))
+        with self.lock:
+            self.eliminatedList.append(key)
 
     def IsEliminated(self, name, reportTime):
         key = str(name) + str(reportTime)
-        return key in self.eliminatedSet
+        with self.lock:
+            return key in self.eliminatedList
 
 class MissingData:
 
@@ -104,8 +108,6 @@ class SuddenChangeHandler:
         if self.isAfterBuyRecord and self.isRise:
             if self.reportPrice/self.jumpPrice < 1.03:
                 return
-        if eliminatedList.IsEliminated(self.currencyName, self.reportTimeInSeconds):
-            return
 
         self.lowestTransaction = TransactionBasics.TransactionCountPerSecBase
         self.acceptedTransLimit = TransactionBasics.TransactionLimitPerSecBase
@@ -121,6 +123,9 @@ class SuddenChangeHandler:
         elif diffTime > 60*25:
             self.jumpTimeInSeconds -= 60*60
             self.reportTimeInSeconds -= 60*60
+
+        if eliminatedList.IsEliminated(self.currencyName, self.reportTimeInSeconds):
+            return
 
         self.__DivideDataInSeconds(tempTransaction, self.transactionParam.msec, self.dataList, 0, len(tempTransaction)) #populates the dataList with TransactionData
         self.__AppendToPatternList(tempTransaction) # deletes dataList and populates mustBuyList, patternList badPatternList
@@ -275,27 +280,18 @@ class SuddenChangeHandler:
 
         limit = 0
         if AP.IsTeaching:
-            limit = TransactionBasics.MaximumSampleSizeFromPattern
+            limit = TransactionBasics.MaximumSampleSizeFromGoodPattern
         if len(self.patternList) > limit:
             if AP.IsTraining:
                 self.patternList.clear()
                 self.patternList.append(self.bestPattern)
             else:
-                randomSampleListGood = random.sample(self.patternList,
-                                                 TransactionBasics.MaximumSampleSizeFromPattern - 1)
-                self.patternList.clear()
-                self.patternList = randomSampleListGood
-
+                self.patternList = random.sample(self.patternList,
+                                                 TransactionBasics.MaximumSampleSizeFromGoodPattern - 1)
 
         if len(self.badPatternList) > TransactionBasics.MaximumSampleSizeFromPattern:
-            sorted(self.badPatternList, key=lambda l: l.lastPrice)
-            lastPrice = self.badPatternList[-1].lastPrice
-            self.badPatternList = [self.badPatternList[-1]]
-            if TransactionBasics.MaximumSampleSizeFromPattern > 1 and len(self.badPatternList) > 1:
-                randomSampleList = random.sample(self.badPatternList, TransactionBasics.MaximumSampleSizeFromPattern-1)
-                for elem in randomSampleList:
-                    if elem.lastPrice != lastPrice:
-                        self.badPatternList.append(elem)
+            randomSampleList = random.sample(self.badPatternList, TransactionBasics.MaximumSampleSizeFromPattern-1)
+            self.badPatternList = randomSampleList
 
         if self.isAfterBuyRecord:
             self.badPatternList.extend(self.badPatternList)
