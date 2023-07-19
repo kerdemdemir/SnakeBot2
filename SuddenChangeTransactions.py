@@ -15,6 +15,7 @@ from matplotlib import pyplot as plt
 import sys
 import multiprocessing
 from functools import partial
+import threading
 
 
 PeakFeatureCount = TransactionBasics.PeakFeatureCount
@@ -30,15 +31,19 @@ def init_pool_processes(the_lock):
 
 class EliminatedList:
     def __init__(self):
-        self.eliminatedSet = set()
+        manager = multiprocessing.Manager()
+        self.eliminatedList = manager.list()
+        self.lock = multiprocessing.Lock()
 
     def AddEliminated(self, name, reportTime):
         key = str(name) + str(reportTime)
-        self.eliminatedSet.add(str(key))
+        with self.lock:
+            self.eliminatedList.append(key)
 
     def IsEliminated(self, name, reportTime):
         key = str(name) + str(reportTime)
-        return key in self.eliminatedSet
+        with self.lock:
+            return key in self.eliminatedList
 
 class MissingData:
 
@@ -104,8 +109,7 @@ class SuddenChangeHandler:
         if self.isAfterBuyRecord and self.isRise:
             if self.reportPrice/self.jumpPrice < 1.03:
                 return
-        if eliminatedList.IsEliminated(self.currencyName, self.reportTimeInSeconds):
-            return
+
 
         self.lowestTransaction = TransactionBasics.TransactionCountPerSecBase
         self.acceptedTransLimit = TransactionBasics.TransactionLimitPerSecBase
@@ -121,6 +125,9 @@ class SuddenChangeHandler:
         elif diffTime > 60*25:
             self.jumpTimeInSeconds -= 60*60
             self.reportTimeInSeconds -= 60*60
+
+        if eliminatedList.IsEliminated(self.currencyName, self.reportTimeInSeconds):
+            return
 
         self.__DivideDataInSeconds(tempTransaction, self.transactionParam.msec, self.dataList, 0, len(tempTransaction)) #populates the dataList with TransactionData
         self.__AppendToPatternList(tempTransaction) # deletes dataList and populates mustBuyList, patternList badPatternList
@@ -401,16 +408,13 @@ class SuddenChangeHandler:
         k = 0
         rules.strikeCount = 0
         for i in range(len(pattern.transactionBuyList)):
-            if rules.ControlClampIndex(k,pattern.transactionBuyList[i]+pattern.transactionSellList[i]):
+            if rules.ControlClampIndex(k,pattern.transactionBuyList[i]):
+                return
+            k+=2
+            if rules.ControlClampIndex(k,pattern.transactionSellList[i]):
                 return
             k+=2
             if rules.ControlClampIndex(k, pattern.TotalPower(i)):
-                return
-            k+=2
-            if rules.ControlClampIndexDivider(k, pattern.TotalPower(i), self.averageVolume):
-                return
-            k+=2
-            if rules.ControlClampIndex(k, pattern.buySellRatio[i]):
                 return
             k+=2
 

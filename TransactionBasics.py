@@ -8,7 +8,7 @@ import AdjustParameters as AP
 
 PeakFeatureCount = 6
 MaximumSampleSizeFromPattern = 30
-MaximumSampleSizeFromGoodPattern = 60
+MaximumSampleSizeFromGoodPattern = 10000
 TransactionCountPerSecBase = 3
 TransactionLimitPerSecBase = 0.1
 TotalPowerLimit = 0.5
@@ -565,12 +565,10 @@ class TransactionPattern:
         returnList = []
 
         for i in range(len(self.transactionBuyList)):
-            returnList.append(self.transactionBuyList[i]+self.transactionSellList[i])
+            returnList.append(self.transactionBuyList[i])
+            returnList.append(self.transactionSellList[i])
             returnList.append(self.TotalPower(i))
-            returnList.append(self.TotalPower(i)/self.averageVolume)
-            returnList.append(self.buySellRatio[i])
-
-        index = len(self.transactionBuyList)*4
+        index = len(self.transactionBuyList)*3
         #returnList.append(self.detailLen)
         #ruleList.SetIndex(AP.AdjustableParameter.DetailLen, index)
         #index+=1

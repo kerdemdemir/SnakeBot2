@@ -331,8 +331,6 @@ class RuleList:
             if rule.adjustableParameter == parameter.name:
                 rule.index = index
     def ControlClamp(self, parameter, val):
-
-
         ruleSmall = self.GetRule(parameter, CheckType.Small)
         ruleBig = self.GetRule(parameter, CheckType.Big)
         if IsShortTerm and not ruleSmall.isShortTerm:
