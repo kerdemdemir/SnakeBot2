@@ -106,10 +106,11 @@ class SuddenChangeHandler:
 
         if self.__Parse(jsonIn) == -1:
             return
+
+
         if self.isAfterBuyRecord and self.isRise:
             if self.reportPrice/self.jumpPrice < 1.03:
                 return
-
 
         self.lowestTransaction = TransactionBasics.TransactionCountPerSecBase
         self.acceptedTransLimit = TransactionBasics.TransactionLimitPerSecBase
@@ -282,27 +283,20 @@ class SuddenChangeHandler:
 
         limit = 0
         if AP.IsTeaching:
-            limit = TransactionBasics.MaximumSampleSizeFromPattern
+            limit = TransactionBasics.MaximumSampleSizeFromGoodPattern
         if len(self.patternList) > limit:
             if AP.IsTraining:
                 self.patternList.clear()
                 self.patternList.append(self.bestPattern)
             else:
-                randomSampleListGood = random.sample(self.patternList,
-                                                 TransactionBasics.MaximumSampleSizeFromPattern - 1)
-                self.patternList.clear()
-                self.patternList = randomSampleListGood
+                self.patternList = random.sample(self.patternList,
+                                                 TransactionBasics.MaximumSampleSizeFromGoodPattern - 1)
+
 
 
         if len(self.badPatternList) > TransactionBasics.MaximumSampleSizeFromPattern:
-            sorted(self.badPatternList, key=lambda l: l.lastPrice)
-            lastPrice = self.badPatternList[-1].lastPrice
-            self.badPatternList = [self.badPatternList[-1]]
-            if TransactionBasics.MaximumSampleSizeFromPattern > 1 and len(self.badPatternList) > 1:
-                randomSampleList = random.sample(self.badPatternList, TransactionBasics.MaximumSampleSizeFromPattern-1)
-                for elem in randomSampleList:
-                    if elem.lastPrice != lastPrice:
-                        self.badPatternList.append(elem)
+            randomSampleList = random.sample(self.badPatternList, TransactionBasics.MaximumSampleSizeFromPattern-1)
+            self.badPatternList = randomSampleList
 
         if self.isAfterBuyRecord:
             self.badPatternList.extend(self.badPatternList)
@@ -364,7 +358,7 @@ class SuddenChangeHandler:
         currentPowSum = 0.0
         curTimeInMiliSecs = jsonIn[curPattern.endIndex]["T"]
 
-        interestTime = 1685718294000
+        interestTime = 1689736520249
         if interestTime - curTimeInMiliSecs < 10000 :
             interestTime = 0
 
@@ -463,6 +457,7 @@ class SuddenChangeHandler:
         elif category == 2:
             self.badPatternList.append(pattern)
             self.addedCount += 1
+            print("Alert added ", self.addedCount)
 
     def __GetCategory(self, curIndex, priceIn, pattern):
         if self.isRise:
