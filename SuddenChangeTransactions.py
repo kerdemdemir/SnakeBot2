@@ -105,9 +105,15 @@ class SuddenChangeHandler:
 
         if self.__Parse(jsonIn) == -1:
             return
-        if self.isAfterBuyRecord and self.isRise:
-            if self.reportPrice/self.jumpPrice < 1.03:
-                return
+
+        buySellPriceRatio = self.reportPrice / self.jumpPrice
+        if self.isAfterBuyRecord:
+            if self.isRise:
+                if buySellPriceRatio < 1.01:
+                    return
+            else:
+                if buySellPriceRatio > 1.0:
+                    return
 
         self.lowestTransaction = TransactionBasics.TransactionCountPerSecBase
         self.acceptedTransLimit = TransactionBasics.TransactionLimitPerSecBase
@@ -181,10 +187,10 @@ class SuddenChangeHandler:
         if self.averageVolume < 0.0001:
             return -1
 
-        if AP.IsWorkingLowVolumes and self.averageVolume > 0.00045:
+        if AP.IsWorkingLowVolumes and self.averageVolume > 0.0004:
             return -1
 
-        if not AP.IsWorkingLowVolumes and self.averageVolume < 0.00045:
+        if not AP.IsWorkingLowVolumes and self.averageVolume < 0.0004:
             return -1
 
         self.riseList = jsonIn["riseList"]
@@ -293,7 +299,7 @@ class SuddenChangeHandler:
             randomSampleList = random.sample(self.badPatternList, TransactionBasics.MaximumSampleSizeFromPattern-1)
             self.badPatternList = randomSampleList
 
-        if self.isAfterBuyRecord:
+        if self.isAfterBuyRecord and len(self.badPatternList) < 15:
             self.badPatternList.extend(self.badPatternList)
 
         if len(self.badPatternList) == 0 and len(self.patternList) == 0 :
@@ -343,7 +349,7 @@ class SuddenChangeHandler:
         if startBin < 0 or curIndex > lenArray:
              return
         curPattern = self.dataList[curIndex]
-        if curPattern.totalBuy < 0.01:
+        if curPattern.totalBuy < 0.03:
             return
 
         pattern = TransactionBasics.TransactionPattern()
@@ -438,6 +444,8 @@ class SuddenChangeHandler:
             return
         if rules.ControlClamp(AP.AdjustableParameter.NetPrice72H, pattern.netPriceList[3]):
             return
+        if rules.ControlClamp(AP.AdjustableParameter.NetPrice168H, pattern.netPriceList[4]):
+            return
         #if rules.ControlClamp(AP.AdjustableParameter.MarketState, pattern.marketStateList[1]):
         #    return
         if rules.strikeCount < self.smallestStrikeCount:
@@ -458,14 +466,14 @@ class SuddenChangeHandler:
 
     def __GetCategory(self, curIndex, priceIn, pattern):
         if self.isRise:
-            if priceIn < self.reportPrice * 0.95:
+            if priceIn < self.reportPrice * 0.97:
                 for i in range(curIndex+1, len(self.dataList)):
                     ratio = self.dataList[i].lastPrice / priceIn
                     timeDiff = self.dataList[i].endIndex - self.dataList[curIndex].endIndex
                     #pattern.UpdatePrice(timeDiff, ratio)
                     if ratio<0.98:
                         return -1
-                    if ratio>1.03:
+                    if ratio>1.02:
                         pattern.GoalReached(timeDiff, 1.03)
                         return 1
                 return -1

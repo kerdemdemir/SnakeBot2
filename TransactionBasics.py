@@ -8,7 +8,7 @@ import AdjustParameters as AP
 
 PeakFeatureCount = 6
 MaximumSampleSizeFromPattern = 100000
-MaximumSampleSizeFromGoodPattern = 30
+MaximumSampleSizeFromGoodPattern = 8
 TransactionCountPerSecBase = 3
 TransactionLimitPerSecBase = 0.1
 TotalPowerLimit = 0.5
@@ -427,7 +427,10 @@ class TransactionPattern:
     def SetPeaks(self, curPrice, priceList, peakList, timeList, minMaxDay, ratio, timeDif ):
 
         self.jumpCountList = [self.GetCount(timeList,60), self.GetCount(timeList, 60 * 2), self.GetCount(timeList, 60 * 4), self.GetCount(timeList, 60 * 8 ), self.GetCount(timeList, 60 * 24 ), self.GetCount(timeList, 60 * 72 )]
-        self.netPriceList = [curPrice/priceList[-2], curPrice/priceList[-16], curPrice/priceList[-48], curPrice/priceList[-144],  curPrice/priceList[-336]]
+        lastone = curPrice/priceList[0]
+        if len(priceList) > 480:
+            lastone = curPrice/priceList[-(480)]
+        self.netPriceList = [curPrice/priceList[-2], curPrice/priceList[-16], curPrice/priceList[-48], curPrice/priceList[-144], lastone]
 
 
         if PeakFeatureCount > 0:
@@ -569,11 +572,12 @@ class TransactionPattern:
             returnList.append(self.TotalPower(i))
             returnList.append(self.TotalPower(i)/self.averageVolume)
             returnList.append(self.buySellRatio[i])
+            returnList.append(self.firstLastPriceList[i])
 
-        index = len(self.transactionBuyList)*4
-        #returnList.append(self.detailLen)
-        #ruleList.SetIndex(AP.AdjustableParameter.DetailLen, index)
-        #index+=1
+        index = len(self.transactionBuyList)*5
+        returnList.append(self.detailLen)
+        ruleList.SetIndex(AP.AdjustableParameter.DetailLen, index)
+        index+=1
 
         returnList.append(self.maxDetailBuyPower)
         ruleList.SetIndex(AP.AdjustableParameter.MaxPowInDetail, index)
@@ -618,6 +622,9 @@ class TransactionPattern:
         index += 1
         returnList.append(self.netPriceList[3])
         ruleList.SetIndex(AP.AdjustableParameter.NetPrice72H, index)
+        index += 1
+        returnList.append(self.netPriceList[4])
+        ruleList.SetIndex(AP.AdjustableParameter.NetPrice168H, index)
         index += 1
         #returnList.append(self.marketStateList[1])
         #index += 1

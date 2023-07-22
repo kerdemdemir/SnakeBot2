@@ -16,7 +16,7 @@ if not IsTeaching:
 if IsTraining:
     TotalStrikeCount = 0
 
-IsWorkingLowVolumes = False
+IsWorkingLowVolumes = True
 
 class AdjustableParameter(Enum):
     TotalBuyCount0 = "TotalBuyCount0"
@@ -301,6 +301,8 @@ class RuleList:
                 continue
 
             curVal = rule.badCount - rule.goodCount
+            if rule.goodCount > 0.25:
+                curVal /= (rule.goodCount/0.05)
             if curVal > bestVal and not rule.isTuned and rule.tuneCount <= 3 :
                 bestVal = curVal
                 selectedRule = rule
