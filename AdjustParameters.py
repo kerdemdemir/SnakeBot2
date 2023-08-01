@@ -3,7 +3,7 @@ import numpy as np
 import json
 from datetime import datetime
 
-IsTeaching = True
+IsTeaching = False
 IsTraining = not IsTeaching
 
 IsShortTerm = False
@@ -151,9 +151,8 @@ class Rule:
         self.tuneCount = 0
         self.isPeakRatio = "PeakRatio" in self.tags
         self.isLongRatio = "LongPrice" in self.tags
-        self.isSkipJumpCount = self.adjustableParameter.startswith("JumpCount") and not self.adjustableParameter.endswith("1H")
         self.isAverageVol = self.adjustableParameter.startswith("AverageVolume")
-        self.isSkipTuning = self.isPeakRatio or self.isLongRatio or self.isSkipJumpCount or self.isAverageVol
+        self.isSkipTuning = self.isPeakRatio or self.isLongRatio or self.isAverageVol or ("NoTune" in self.tags)
         self.isNonZero = "NonZero" in self.tags
         self.isTransaction = "Transaction" in self.tags
         self.isShortTerm = self.isTransaction or "NetPrice" in self.tags or "Detail" in self.tags
@@ -302,7 +301,7 @@ class RuleList:
 
             curVal = rule.badCount - rule.goodCount
             if rule.goodCount > 0.25:
-                curVal /= (rule.goodCount/0.05)
+                curVal /= (rule.goodCount/0.1)
             if curVal > bestVal and not rule.isTuned and rule.tuneCount <= 3 :
                 bestVal = curVal
                 selectedRule = rule
@@ -332,6 +331,9 @@ class RuleList:
         for rule in self.ruleList:
             if rule.adjustableParameter == parameter.name:
                 rule.index = index
+                return
+
+
     def ControlClamp(self, parameter, val):
 
 

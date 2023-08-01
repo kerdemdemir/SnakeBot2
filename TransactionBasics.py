@@ -173,6 +173,10 @@ class TransactionData:
         self.sellWall = 0.0
         self.buyLongWall = 0.0
         self.sellLongWall = 0.0
+        self.lastBuyWall = 0.0
+        self.lastSellWall = 0.0
+        self.lastBuyLongWall = 0.0
+        self.lastSellLongWall = 0.0
     def __repr__(self):
         return "TotalBuy:%f,TotalSell:%f,TransactionCount:%f,Score:%f,LastPrice:%f,Time:%d" % (
         self.totalBuy, self.totalSell,
@@ -205,6 +209,11 @@ class TransactionData:
             self.sellWall += float(buyList[1])
             self.buyLongWall += float(buyList[2])
             self.sellLongWall += float(buyList[3])
+            self.lastBuyWall = float(buyList[0])
+            self.lastSellWall = float(buyList[1])
+            self.lastBuyLongWall = float(buyList[2])
+            self.lastSellLongWall = float(buyList[3])
+
 
         if not isSell:
             self.transactionBuyCount += 1
@@ -508,10 +517,10 @@ class TransactionPattern:
         else:
             self.marketStateList = []
 
-        self.buyWall = dataList[-1].buyWall
-        self.sellWall = dataList[-1].sellWall
-        self.buyLongWall = dataList[-1].buyLongWall
-        self.sellLongWall = dataList[-1].sellLongWall
+        self.buyWall = dataList[-1].lastBuyWall
+        self.sellWall = dataList[-1].lastSellWall
+        self.buyLongWall = dataList[-1].lastBuyLongWall
+        self.sellLongWall = dataList[-1].lastSellLongWall
         self.averageVolume = averageVolume
 
 
@@ -575,9 +584,6 @@ class TransactionPattern:
             returnList.append(self.firstLastPriceList[i])
 
         index = len(self.transactionBuyList)*5
-        returnList.append(self.detailLen)
-        ruleList.SetIndex(AP.AdjustableParameter.DetailLen, index)
-        index+=1
 
         returnList.append(self.maxDetailBuyPower)
         ruleList.SetIndex(AP.AdjustableParameter.MaxPowInDetail, index)
@@ -603,12 +609,12 @@ class TransactionPattern:
         ruleList.SetIndex(AP.AdjustableParameter.AverageVolume, index)
         index += 1
 
-        returnList.append(self.timeList[-1])
-        ruleList.SetIndex(AP.AdjustableParameter.PeakTime0, index)
+        returnList.append(self.jumpCountList[-2])
+        ruleList.SetIndex(AP.AdjustableParameter.JumpCount24H, index)
         index += 1
 
-        returnList.append(self.timeList[-2])
-        ruleList.SetIndex(AP.AdjustableParameter.PeakTime1, index)
+        returnList.append(self.jumpCountList[-1])
+        ruleList.SetIndex(AP.AdjustableParameter.JumpCount72H, index)
         index += 1
 
         returnList.append(self.netPriceList[0])
