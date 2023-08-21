@@ -3,7 +3,7 @@ import numpy as np
 import json
 from datetime import datetime
 
-IsTeaching = False
+IsTeaching = True
 IsTraining = not IsTeaching
 
 IsShortTerm = False
@@ -17,6 +17,7 @@ if IsTraining:
     TotalStrikeCount = 0
 
 IsWorkingLowVolumes = True
+IsTraningUpPeaks = True
 
 class AdjustableParameter(Enum):
     TotalBuyCount0 = "TotalBuyCount0"
@@ -151,8 +152,9 @@ class Rule:
         self.tuneCount = 0
         self.isPeakRatio = "PeakRatio" in self.tags
         self.isLongRatio = "LongPrice" in self.tags
-        self.isAverageVol = self.adjustableParameter.startswith("AverageVolume")
-        self.isSkipTuning = self.isPeakRatio or self.isLongRatio or self.isAverageVol or ("NoTune" in self.tags)
+        self.isAverageVol = IsTraningUpPeaks and self.adjustableParameter.startswith("AverageVolume")
+        self.isSkipAverageVol = (self.isAverageVol and IsWorkingLowVolumes and self.checkType == CheckType.Big) or (self.isAverageVol and not IsWorkingLowVolumes and self.checkType == CheckType.Small)
+        self.isSkipTuning = self.isPeakRatio or self.isLongRatio or self.isSkipAverageVol or ("NoTune" in self.tags)
         self.isNonZero = "NonZero" in self.tags
         self.isTransaction = "Transaction" in self.tags
         self.isShortTerm = self.isTransaction or "NetPrice" in self.tags or "Detail" in self.tags
@@ -319,8 +321,9 @@ class RuleList:
             jsonDict["ruleList"].append(rule.ToJson())
         parsed = json.loads(json.dumps(jsonDict))
         volumeText = "LowVolume" if IsWorkingLowVolumes else "HighVolume"
+        peakText = "UpPeak" if IsTraningUpPeaks else "DownPeak"
         fileName = "/home/erdem/Documents/BotOutput/RuleJsonList_" + str(self.iterationCount)  + "_" + str(goodCount) + "_" + \
-                   str(badCount) + "_" + volumeText + ".json"
+                   str(badCount) + "_" + volumeText + "_" + peakText + ".json"
         file = open(fileName, "w")
         file.write(json.dumps(parsed, indent=4))
 
@@ -335,8 +338,6 @@ class RuleList:
 
 
     def ControlClamp(self, parameter, val):
-
-
         ruleSmall = self.GetRule(parameter, CheckType.Small)
         ruleBig = self.GetRule(parameter, CheckType.Big)
         if IsShortTerm and not ruleSmall.isShortTerm:

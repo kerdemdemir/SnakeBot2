@@ -1,10 +1,5 @@
-import copy
-import bisect
-from datetime import datetime
-import bisect
-import statistics
-
 import AdjustParameters as AP
+import Peaks
 
 PeakFeatureCount = 6
 MaximumSampleSizeFromPattern = 100000
@@ -37,49 +32,6 @@ def LastNElementsTransactionPower(list, index, elementCount):
         lastTotalTradePower = list[curIndex].totalBuy + list[curIndex].totalSell
         totalTradePower += lastTotalTradePower
     return totalTradePower
-
-class TimePriceBasic:
-    def __init__( self, timeInSeconds, priceIn ) :
-        self.timeInSec = timeInSeconds
-        self.price = priceIn
-
-    def __lt__(self, other):
-        return self.timeInSec < other.timeInSec
-
-
-def GetMaxMinListWithTime(allPeaksStr, buyTimeInSeconds, buyPrice):
-    activePeak = allPeaksStr.split("|")[0]
-    allPeakListStr = activePeak.split('&')
-    allPeakList = []
-    epoch = datetime.utcfromtimestamp(0)
-    for peakStr in allPeakListStr:
-        price = float(peakStr.split(" ")[0])
-        timeStr = peakStr.split(" ")[1]
-        datetime_object = datetime.strptime(timeStr, '%Y%m%dT%H%M%S')
-        curSeconds = (datetime_object - epoch).total_seconds()
-        if curSeconds > buyTimeInSeconds:
-            break
-        curTimePrice = TimePriceBasic(curSeconds, price)
-        allPeakList.append(curTimePrice)
-
-    returnValue = []
-    for cureTimeOffset in MaxMinListTimes:
-        curTimeInSeconds = buyTimeInSeconds - cureTimeOffset
-        startIndex = bisect.bisect_right(allPeakList, TimePriceBasic(curTimeInSeconds,0.0))
-        # if len(allPeakList) > startIndex:
-        #     timeTemp = allPeakList[startIndex].timeInSec
-        #     print("Alert " , timeTemp-curTimeInSeconds, " ", timeTemp," " ,curTimeInSeconds, " ", buyTimeInSeconds)
-        # else:
-        #     print("Alert2 ", len(allPeakList), " ", startIndex)
-        curMax = 1.0
-        curMin = 1.0
-        for peak in allPeakList[startIndex:]:
-            curMin = min( peak.price/buyPrice, curMin )
-            curMax = max( peak.price/buyPrice, curMax )
-        returnValue.append(curMin)
-        if IsUseMaxInList:
-            returnValue.append(curMax)
-    return returnValue
 
 def chunks(lst, n):
     """Yield successive n-sized chunks from lst."""
@@ -323,6 +275,7 @@ class TransactionPattern:
         self.marketStateList = []
         self.peaks = []
         self.timeList = []
+        self.priceList = []
         self.isAvoidPeaks = True
         self.buyRatio = 1.0
         self.buyTimeDiffInSecs = 0
@@ -350,7 +303,8 @@ class TransactionPattern:
         self.sellWall = 0.0
         self.buyLongWall = 0.0
         self.sellLongWall = 0.0
-
+        self.buyWallRatio = 1.0
+        self.sellWallRatio = 1.0
         self.averageVolume = 0.0
     def UpdatePrice(self, timeDiff, priceRatio ):
         if timeDiff < 60 :
@@ -433,81 +387,61 @@ class TransactionPattern:
                 return curPrice/priceList[-counter]
         return curPrice/priceList[-counter]
 
-    def SetPeaks(self, curPrice, priceList, peakList, timeList, minMaxDay, ratio, timeDif ):
+    def SetPeaks(self, curPrice, curTime, candleSticks, dataList ):
+        peakListAndTimeList = candleSticks.GetPeaks(curPrice, curTime, dataList)
+        self.netPriceList = [curPrice / candleSticks.GetPrice(curTime, 60*60), curPrice / candleSticks.GetPrice(curTime, 60*60*8),
+                             curPrice / candleSticks.GetPrice(curTime, 60*60*24), curPrice / candleSticks.GetPrice(curTime, 60*60*72),
+                             curPrice / candleSticks.GetPrice(curTime, 60*60*168)]
 
-        self.jumpCountList = [self.GetCount(timeList,60), self.GetCount(timeList, 60 * 2), self.GetCount(timeList, 60 * 4), self.GetCount(timeList, 60 * 8 ), self.GetCount(timeList, 60 * 24 ), self.GetCount(timeList, 60 * 72 )]
-        lastone = curPrice/priceList[0]
-        if len(priceList) > 480:
-            lastone = curPrice/priceList[-(480)]
-        self.netPriceList = [curPrice/priceList[-2], curPrice/priceList[-16], curPrice/priceList[-48], curPrice/priceList[-144], lastone]
-
-
-        if PeakFeatureCount > 0:
-            self.peaks = copy.deepcopy(peakList[-10:])
-            self.timeList = copy.deepcopy(timeList[-10:])
-
-        if self.peaks[-1] > 0.0:
-            newRatio = (self.peaks[-1] / 100.0 + 1.0) * ratio
-            self.peaks[-1] = (newRatio - 1.0) * 100.0
-        else:
-            newRatio = (1.0 - self.peaks[-1] / 100.0) / ratio
-            self.peaks[-1] = (-newRatio+1.0) * 100.0
-        self.timeList[-1] += timeDif
-
-        self.dayPriceArray = copy.deepcopy(minMaxDay)
-        for index in range(len(self.dayPriceArray)):
-            self.dayPriceArray[index] *= ratio
-
-        if self.timeList[-1] < 0.0:
-            tempList =  copy.deepcopy(self.timeList[-6:])
-            for i in range(5):
-                self.timeList[-6+i+1] = tempList[-6+i]
-
-        if (self.peaks[-1] < 0.0 and  self.peaks[-1] > -4.0) or (self.peaks[-1] > 0.0 and  self.peaks[-1] < 4.0) :
-            last = self.peaks[-1]
-            tempList =  copy.deepcopy(self.peaks[-8:])
-            for i in range(7):
-                self.peaks[-8+i+1] = tempList[-8+i]
-            self.peaks[-1] += last
-
-
-        totalTime = 0
-        for curTime in reversed(self.timeList):
-            totalTime += curTime
-            if totalTime < 15 :
-                self.totalPeakCount15M += 1
-                self.totalPeakCount1Hour += 1
-                self.totalPeakCount6Hour += 1
-                self.totalPeakCount24Hour += 1
-            elif totalTime < 60 :
-                self.totalPeakCount1Hour += 1
-                self.totalPeakCount6Hour += 1
-                self.totalPeakCount24Hour += 1
-            elif totalTime < 360:
-                self.totalPeakCount6Hour += 1
-                self.totalPeakCount24Hour += 1
-            elif totalTime < 2160:
-                self.totalPeakCount24Hour += 1
+        self.jumpCountList = [candleSticks.CountPeaks(curTime, 60*60*24),candleSticks.CountPeaks(curTime, 60*60*24*7)]
+        self.peaks = peakListAndTimeList[0]
+        self.timeList = peakListAndTimeList[1]
+        self.priceList = peakListAndTimeList[2]
+        if peakListAndTimeList[3] == Peaks.PriceTrendSide.DOWN:
+            if len(self.priceList) > 3:
+                self.lastDownRatio = self.priceList[-2]/self.priceList[-4]
             else:
-                break
+                self.lastDownRatio = 1.0
 
-        if self.peaks[-1] < 0.0:
-            self.lastDownRatio = self.peaks[-1]+self.peaks[-2]
-            self.lastUpRatio = self.peaks[-2] + self.peaks[-3]
-            self.lastDownRatio2 = self.peaks[-3]+self.peaks[-4]
-            self.lastUpRatio2 = self.peaks[-4] + self.peaks[-5]
+            if len(self.priceList) > 4:
+                self.lastUpRatio = self.priceList[-3] /self.priceList[-5]
+            else:
+                self.lastUpRatio = 1.0
+
+            if len(self.priceList) > 5:
+                self.lastDownRatio2 = self.priceList[-4]/self.priceList[-6]
+            else:
+                self.lastDownRatio2 = 1.0
+
+            if len(self.priceList) > 6:
+                self.lastUpRatio2 = self.priceList[-5] /self.priceList[-7]
+            else:
+                self.lastUpRatio2 = 1.0
         else:
-            #self.lastDownRatioRise = self.peaks[-2]+self.peaks[-3]
-            #self.lastUpRatioRise = self.peaks[-1] + self.peaks[-2]
-            #self.lastDownRatioRise2 = self.peaks[-4]+self.peaks[-5]
-            #self.lastUpRatioRise2 = self.peaks[-3] + self.peaks[-4]
-            self.lastDownRatioRise = self.peaks[-1]
-            self.lastUpRatioRise = self.peaks[-2]
-            self.lastDownRatioRise2 = self.peaks[-3]
-            self.lastUpRatioRise2 = self.peaks[-4]
+            if len(self.priceList) > 4:
+                self.lastDownRatio = self.priceList[-3]/self.priceList[-5]
+            else:
+                self.lastDownRatio = 1.0
+
+            if len(self.priceList) > 3:
+                self.lastUpRatio = self.priceList[-2] / self.priceList[-4]
+            else:
+                self.lastUpRatio = 1.0
+
+            if len(self.priceList) > 6 :
+                self.lastDownRatio2 = self.priceList[-5]/self.priceList[-7]
+            else:
+                self.lastDownRatio2 = 1.0
+
+            if len(self.priceList) > 5:
+                self.lastUpRatio2 = self.priceList[-4] / self.priceList[-6]
+            else:
+                self.lastUpRatio2 = 1.0
+
 
         self.lastRatio = self.peaks[-1]
         self.isAvoidPeaks = False
+        return peakListAndTimeList[3]
 
     def Append(self, dataList, averageVolume, peakTime, jumpPrice, marketState):
 
@@ -521,6 +455,11 @@ class TransactionPattern:
         self.sellWall = dataList[-1].lastSellWall
         self.buyLongWall = dataList[-1].lastBuyLongWall
         self.sellLongWall = dataList[-1].lastSellLongWall
+
+        if dataList[1].buyLongWall != 0.0:
+            self.buyWallRatio = dataList[-1].buyLongWall/dataList[1].buyLongWall
+        if dataList[1].sellLongWall != 0.0:
+            self.sellWallRatio = dataList[-1].sellLongWall/dataList[1].sellLongWall
         self.averageVolume = averageVolume
 
 
@@ -612,11 +551,6 @@ class TransactionPattern:
         returnList.append(self.jumpCountList[-2])
         ruleList.SetIndex(AP.AdjustableParameter.JumpCount24H, index)
         index += 1
-
-        returnList.append(self.jumpCountList[-1])
-        ruleList.SetIndex(AP.AdjustableParameter.JumpCount72H, index)
-        index += 1
-
         returnList.append(self.netPriceList[0])
         ruleList.SetIndex(AP.AdjustableParameter.NetPrice1H, index)
         index += 1
@@ -631,10 +565,34 @@ class TransactionPattern:
         index += 1
         returnList.append(self.netPriceList[4])
         ruleList.SetIndex(AP.AdjustableParameter.NetPrice168H, index)
+
         index += 1
-        #returnList.append(self.marketStateList[1])
-        #index += 1
-        #returnList.append(self.timeToJump)
+        returnList.append(self.peaks[-1])
+        ruleList.SetIndex(AP.AdjustableParameter.PeakLast0, index)
+        index += 1
+        returnList.append(self.timeList[-1])
+        ruleList.SetIndex(AP.AdjustableParameter.PeakTime0, index)
+        index += 1
+        returnList.append(self.timeList[-2])
+        ruleList.SetIndex(AP.AdjustableParameter.PeakTime1, index)
+        index += 1
+        returnList.append(self.lastDownRatio)
+        ruleList.SetIndex(AP.AdjustableParameter.DownPeakRatio0, index)
+        index += 1
+        returnList.append(self.lastUpRatio)
+        ruleList.SetIndex(AP.AdjustableParameter.UpPeakRatio0, index)
+
+        returnList.append(self.peaks[-2])
+        if len(self.timeList) > 3:
+            returnList.append(self.timeList[-3])
+            returnList.append(self.timeList[-4])
+        else:
+            returnList.append(self.timeList[-1])
+            returnList.append(self.timeList[-1])
+        returnList.append(self.lastDownRatio2)
+        returnList.append(self.lastUpRatio2)
+
+        #returnList.append(self.timeToJump
 
         return returnList
 
