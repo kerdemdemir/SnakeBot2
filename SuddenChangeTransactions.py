@@ -193,6 +193,7 @@ class SuddenChangeHandler:
                         emptyData = TransactionBasics.TransactionData()
                         emptyData.SetTime(lastEndTime // msecs * msecs / 1000)
                         emptyData.SetIndex(x)
+                        emptyData.firstPrice = copyData.lastPrice
                         emptyData.lastPrice = copyData.lastPrice
                         lastEndTime += msecs
                         if startIndex == 0:

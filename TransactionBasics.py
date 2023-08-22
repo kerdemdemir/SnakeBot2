@@ -55,37 +55,6 @@ def GetListFromBasicTransData( inBasicTransactionDataList ):
         returnList.append(inBasicTransactionDataList[i].totalSell)
     return returnList
 
-def RiseListSanitizer( riseList, timeList ):
-    correctIndexes = []
-    for i in range(len(riseList) - 1):
-        if riseList[i] * riseList[i + 1] > 0.0:
-            correctIndexes.append( i+1 )
-
-    for index in correctIndexes:
-        timeValue = timeList[index - 1]
-        timeList[index - 1] = timeValue//2
-        timeList.insert(index,timeValue//2)
-        if riseList[index - 1] > 0.0 :
-            riseList.insert(index, -3.0)
-        else:
-            riseList.insert(index, 3.0)
-
-def GetTotalPatternCount(ngrams):
-    return 451
-
-def ReduceToNGrams(listToMerge, ngrams):
-    elemList = [360, 60, 30, 1]
-    startIndex = 0
-    newMergeList = []
-    for mergeSize in elemList:
-        startData = listToMerge[startIndex]
-        for k in range(mergeSize-1):
-            startData.CombineData(listToMerge[startIndex+k+1])
-        startIndex += mergeSize
-        startData.Divide(mergeSize)
-        newMergeList.append(startData)
-    return newMergeList
-
 class TransactionParam:
     def __init__ ( self, msec, gramCount ):
         self.msec = msec
@@ -115,6 +84,9 @@ class TransactionData:
         self.totalTransactionCount = 0.0
         self.score = 0
         self.timeInSecs = 0
+        self.endTimeInSecs = 0
+        self.minTimeInSecs = 0
+        self.maxTimeInSecs = 0
         self.firstPrice = 0.0
         self.lastPrice = 0.0
         self.maxPrice = 0.0
@@ -151,9 +123,18 @@ class TransactionData:
         power = float(jsonIn["q"]) * float(jsonIn["p"])
         if self.firstPrice == 0.0:
             self.firstPrice = float(jsonIn["p"])
+            self.minPrice = self.firstPrice
+            self.maxPrice = self.firstPrice
         self.SetCurPrice(jsonIn)
-        self.maxPrice = max(self.lastPrice, self.maxPrice)
-        self.minPrice = min(self.lastPrice, self.minPrice)
+        curTime = int(jsonIn["T"]) // 1000
+        if self.lastPrice > self.maxPrice:
+            self.maxPrice = self.lastPrice
+            self.maxTimeInSecs = curTime
+        if self.lastPrice < self.minPrice:
+            self.minPrice = self.lastPrice
+            self.minTimeInSecs = curTime
+        self.endTimeInSecs = curTime
+
         self.totalTransactionCount += 1
         if "d" in jsonIn :
             buyList = jsonIn["d"].split(",")
@@ -186,22 +167,11 @@ class TransactionData:
         self.totalSell /= dividor
         self.totalBuy /= dividor
 
-    def CombineData(self, otherData):
-        self.totalTransactionCount += otherData.totalTransactionCount
-        self.transactionBuyCount += otherData.transactionBuyCount
-        self.totalBuy += otherData.totalBuy
-        self.totalSell += otherData.totalSell
-        self.lastPrice = otherData.lastPrice
-        if self.firstPrice == 0.0:
-            self.firstPrice = otherData.firstPrice
-        self.timeInSecs = otherData.timeInSecs
-        self.endIndex = otherData.endIndex
-        self.maxPrice = max(self.maxPrice, otherData.maxPrice)
-        if otherData.minPrice != 0.0:
-            self.minPrice = min(self.minPrice, otherData.minPrice)
-
     def SetTime(self, timeInSecs):
         self.timeInSecs = timeInSecs
+        self.maxTimeInSecs = timeInSecs
+        self.minTimeInSecs = timeInSecs
+        self.endTimeInSecs = timeInSecs
 
     def SetIndex(self, index):
         if self.startIndex == 0:
@@ -215,6 +185,9 @@ class TransactionData:
         self.totalTransactionCount = 0.0
         self.score = 0
         self.timeInSecs = 0
+        self.endTimeInSecs = 0
+        self.minTimeInSecs = 0
+        self.maxTimeInSecs = 0
         self.firstPrice = 0.0
         self.lastPrice = 0.0
         self.maxPrice = 0.0
@@ -441,7 +414,7 @@ class TransactionPattern:
 
         self.lastRatio = self.peaks[-1]
         self.isAvoidPeaks = False
-        return peakListAndTimeList[3]
+        return peakListAndTimeList[4]
 
     def Append(self, dataList, averageVolume, peakTime, jumpPrice, marketState):
 

@@ -17,7 +17,7 @@ if IsTraining:
     TotalStrikeCount = 0
 
 IsWorkingLowVolumes = True
-IsTraningUpPeaks = True
+IsTraningUpPeaks = False
 
 class AdjustableParameter(Enum):
     TotalBuyCount0 = "TotalBuyCount0"
