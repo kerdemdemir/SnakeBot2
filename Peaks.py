@@ -179,33 +179,32 @@ class CandleDataList:
 
     def __init__(self):
         self.candleStickDataList = []
-        self.peaks = PeakList(0.08)
-        self.smallPeaks = PeakList(0.035)
+        self.peaks = PeakList(0.03)
 
     def feed(self, jsonIn):
-        self.peaks = PeakList(0.08)
+        self.peaks = PeakList(0.03)
         self.feedPeaks(jsonIn, self.peaks)
-        self.smallPeaks = PeakList(0.03)
-        self.feedPeaks(jsonIn, self.smallPeaks)
     def feedPeaks(self, jsonIn, peakList):
         self.candleStickDataList = []
         for candleStick in jsonIn:
             candleData = CandleDataBasic(str(candleStick))
             self.candleStickDataList.append(candleData)
-            maxDiff = candleData.closePrice-candleData.maxPrice
-            minDiff = candleData.closePrice-candleData.minPrice
-            middleTime = (candleData.endTimeSec+candleData.startTimeSec)//2
-            if abs(minDiff) > abs(maxDiff) :
+            maxDiff = candleData.closePrice - candleData.maxPrice
+            minDiff = candleData.closePrice - candleData.minPrice
+            middleTime = (candleData.endTimeSec + candleData.startTimeSec) // 2
+            peakList.CurveUpdate(candleData.openPrice, candleData.startTimeSec)
+            if abs(minDiff) > abs(maxDiff):
                 peakList.CurveUpdate(candleData.minPrice, middleTime)
                 peakList.CurveUpdate(candleData.maxPrice, candleData.endTimeSec)
             else:
                 peakList.CurveUpdate(candleData.maxPrice, middleTime)
                 peakList.CurveUpdate(candleData.minPrice, candleData.endTimeSec)
+
         if len(peakList.peakDataList)>0:
             peakList.peakDataList.pop(0)
     def CountPeaks(self, timeSec, durationSec ):
         counter = 0
-        tempList = self.smallPeaks.peakDataList + [self.smallPeaks.curStream]
+        tempList = self.peaks.peakDataList + [self.peaks.curStream]
         for peak in reversed(tempList):
             if peak.IsTimeBefore(timeSec):
                 continue
@@ -267,13 +266,11 @@ class CandleDataList:
         changeList.append(curPrice/curLastPrice)
         timeList.append(curTime-curEndTime)
         newPriceList.append(curPrice)
-        longTermTrend = startStream.IsUpOrDownPeak()
-        startStream = self.GetStartPeak(curPrice, curTime, dividedTimeList, self.smallPeaks)
         changeList.append(startStream.GetChange())
         timeList.append(startStream.GetTimeDiff())
         newPriceList.append(curLastPrice)
 
-        for peak in reversed(self.smallPeaks.peakDataList):
+        for peak in reversed(self.peaks.peakDataList):
             if peak.IsTimeAfter(startStream.GetStartTime()+1):
                 changeList.append(peak.GetChange())
                 timeList.append(peak.GetTimeDiff())
@@ -282,4 +279,4 @@ class CandleDataList:
         timeList.reverse()
         newPriceList.reverse()
 
-        return changeList, timeList, newPriceList, startStream.IsUpOrDownPeak(), longTermTrend
+        return changeList, timeList, newPriceList, startStream.IsUpOrDownPeak(), startStream.IsUpOrDownPeak()

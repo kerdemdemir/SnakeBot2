@@ -3,9 +3,9 @@ import numpy as np
 import json
 from datetime import datetime
 
-IsTeaching = True
+IsTeaching = False
 IsTraining = not IsTeaching
-
+IsMachineLearning = True
 IsShortTerm = False
 IsTrained = not IsTeaching
 TotalStrikeCount = 0
@@ -16,8 +16,8 @@ if not IsTeaching:
 if IsTraining:
     TotalStrikeCount = 0
 
-IsWorkingLowVolumes = True
-IsTraningUpPeaks = False
+IsWorkingLowVolumes = False
+IsTraningUpPeaks = True
 
 class AdjustableParameter(Enum):
     TotalBuyCount0 = "TotalBuyCount0"
@@ -153,12 +153,12 @@ class Rule:
         self.isPeakRatio = "PeakRatio" in self.tags
         self.isLongRatio = "LongPrice" in self.tags
         self.isAverageVol = IsTraningUpPeaks and self.adjustableParameter.startswith("AverageVolume")
-        self.isSkipAverageVol = (self.isAverageVol and IsWorkingLowVolumes and self.checkType == CheckType.Big) or (self.isAverageVol and not IsWorkingLowVolumes and self.checkType == CheckType.Small)
+        self.isSkipAverageVol = False and (self.isAverageVol and IsWorkingLowVolumes and self.checkType == CheckType.Big) or (self.isAverageVol and not IsWorkingLowVolumes and self.checkType == CheckType.Small)
         self.isSkipTuning = self.isPeakRatio or self.isLongRatio or self.isSkipAverageVol or ("NoTune" in self.tags)
         self.isNonZero = "NonZero" in self.tags
         self.isTransaction = "Transaction" in self.tags
         self.isShortTerm = self.isTransaction or "NetPrice" in self.tags or "Detail" in self.tags
-        if IsTeaching and not IsTraining:
+        if IsTeaching and not IsTraining and not IsMachineLearning:
             if not self.isTuned:
                 self.threshold = 100000000
                 if self.IsSmall():

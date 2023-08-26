@@ -17,7 +17,7 @@ import Peaks
 import time
 
 PeakFeatureCount = TransactionBasics.PeakFeatureCount
-
+IsMultiThreaded = False
 percent = 0.01
 IsOneFileOnly = False
 totalCounter = 0
@@ -29,45 +29,29 @@ def init_pool_processes(the_lock):
 
 class EliminatedList:
     def __init__(self):
-        manager = multiprocessing.Manager()
-        self.eliminatedList = manager.list()
-        self.lock = multiprocessing.Lock()
+        if IsMultiThreaded :
+            manager = multiprocessing.Manager()
+            self.eliminatedList = manager.list()
+            self.lock = multiprocessing.Lock()
+        else:
+            self.eliminatedList = []
 
     def AddEliminated(self, name, reportTime):
         key = str(name) + str(reportTime)
-        with self.lock:
+        if IsMultiThreaded:
+            with self.lock:
+                self.eliminatedList.append(key)
+        else:
             self.eliminatedList.append(key)
 
     def IsEliminated(self, name, reportTime):
         key = str(name) + str(reportTime)
-        with self.lock:
+        if IsMultiThreaded:
+            with self.lock:
+                return key in self.eliminatedList
+        else:
             return key in self.eliminatedList
 
-class MissingData:
-
-    def __init__(self, preciseData, averageVol):
-        self.precisePriceData = [float(num) for num in preciseData.split(",")]
-        self.averageVol = averageVol
-class MissingDataReader:
-    def __init__(self):
-        file = open("/home/erdem/Documents/outputExtras.txt", "r")
-        self.dataDict = {}
-        for line in file.readlines():
-            datalist = line.split(';')
-            key = datalist[0].split(":")[1]
-            missingData = MissingData(datalist[3].split(":")[1], datalist[2].split(":")[1])
-            self.dataDict[key] = missingData
-
-    def isKeyExists(self, currencyName, timeInSeconds):
-        key = currencyName+str(int(timeInSeconds))
-        if key in self.dataDict:
-            return True
-        return False
-    def getMissingData(self, currencyName, timeInSeconds):
-        key = currencyName+str(int(timeInSeconds))
-        return self.dataDict[key]
-
-missingDataReader = MissingDataReader()
 eliminatedList = EliminatedList()
 
 class SuddenChangeHandler:
@@ -80,24 +64,16 @@ class SuddenChangeHandler:
         self.transactions = []
         self.currencyName = ""
         self.isRise = False
-        self.downUpList = []
         self.candleDataList = Peaks.CandleDataList()
         self.transactionParam = transactionParam
-        self.extraControlDataList = []
-        self.priceList = []
         self.patternList = []
         self.mustBuyList = []
         self.badPatternList = []
-        self.multiplier = 1
-        self.mustSellList = []
-        self.keepList = []
         self.addedCount  = 0
         self.isAfterBuyRecord = fileName.startswith("Positive")
         self.smallestStrikeCount = 1000
         self.bestPattern = None
         self.averageVolume = 0.0
-
-        self.jumpState = []
 
         if self.__Parse(jsonIn) == -1:
             return
@@ -136,7 +112,6 @@ class SuddenChangeHandler:
         self.__AppendToPatternList(tempTransaction) # deletes dataList and populates mustBuyList, patternList badPatternList
 
     def GetFeatures(self):
-        #return self.downUpList
         #maxRise = [self.GetPeakFeatures(60 * 6), self.GetPeakFeatures(60 * 24), self.GetPeakFeatures(60 * 24 * 3), self.GetPeakFeatures(60 * 24 * 7 ), self.GetPeakFeatures(60 * 24 * 30 ), self.GetPeakFeatures(60 * 24 * 90 )]
         #maxRise = [self.GetCount(60 * 6), self.GetCount(60 * 24), self.GetCount(60 * 24 * 3), self.GetCount(60 * 24 * 7 ), self.GetCount(60 * 24 * 30 ), self.GetCount(60 * 24 * 90 )]
         #return maxRise
@@ -165,7 +140,6 @@ class SuddenChangeHandler:
         datetime_object = datetime.strptime(jsonIn["time"].split(".")[0], '%Y-%b-%d %H:%M:%S')
         self.jumpTimeInSeconds = (datetime_object - epoch).total_seconds()
 
-        self.downUpList = jsonIn["downUps"]
         self.currencyName = jsonIn["name"]
 
 
@@ -227,7 +201,7 @@ class SuddenChangeHandler:
             self.dataList.reverse()
 
         limit = 0
-        if AP.IsTeaching:
+        if AP.IsTeaching or AP.IsMachineLearning:
             limit = TransactionBasics.MaximumSampleSizeFromGoodPattern
         if len(self.patternList) > limit:
             if AP.IsTraining:
@@ -241,18 +215,22 @@ class SuddenChangeHandler:
             randomSampleList = random.sample(self.badPatternList, TransactionBasics.MaximumSampleSizeFromPattern-1)
             self.badPatternList = randomSampleList
 
-        if self.isAfterBuyRecord and len(self.badPatternList) < 15:
-            self.badPatternList.extend(self.badPatternList)
+        buySellPriceRatio = self.reportPrice / self.jumpPrice
 
         timeDiff = time.time() - self.reportTimeInSeconds
-        if self.isAfterBuyRecord and  timeDiff < (60*60*24*7):
+        if self.isAfterBuyRecord and timeDiff < (60*60*24*7):
             print("Extending the list because it happened very soon")
-            self.badPatternList.extend(self.badPatternList)
+            if len(self.badPatternList) < 15:
+                self.badPatternList.extend(self.badPatternList)
+            if buySellPriceRatio < 0.97 :
+                print("Double Extending the list because it happened very soon")
+                self.badPatternList.extend(self.badPatternList)
 
         if len(self.badPatternList) == 0 and len(self.patternList) == 0 :
             eliminatedList.AddEliminated(self.currencyName, self.reportTimeInSeconds)
 
         del self.dataList
+        del self.candleDataList
 
     def __GetWithTime(self, jsonIn, startIndex, startTime, stopTime, divider):
         currentData = TransactionBasics.TransactionData()
@@ -293,7 +271,7 @@ class SuddenChangeHandler:
              return
         curPattern = self.dataList[curIndex]
         curTimeInMiliSecs = jsonIn[curPattern.endIndex]["T"]
-        interestTime = 1691086991694
+        interestTime = 0
         #if interestTime - curTimeInMiliSecs < 10000 and self.currencyName == "SCRT":
         #    print("ALERT")
 
@@ -309,7 +287,7 @@ class SuddenChangeHandler:
         currentPowSum = 0.0
 
         actualEndIndex = curPattern.endIndex
-        if interestTime - curTimeInMiliSecs < 10000 and self.currencyName == "":
+        if interestTime != 0 and interestTime - curTimeInMiliSecs < 10000 :
             curTimeInMiliSecs = interestTime
             for x in range(curPattern.startIndex, curPattern.endIndex):
                 if jsonIn[x]["T"] > curTimeInMiliSecs:
@@ -332,17 +310,17 @@ class SuddenChangeHandler:
         timeDiffInSeconds = (self.reportTimeInSeconds - curTimeInMiliSecs//1000 )
         actualAvarageVolume = (self.averageVolume * 60 * 60 * 6 - restPowerSum) / (60 * 60 * 6 - timeDiffInSeconds)
 
-        if AP.IsTraningUpPeaks :
-            if AP.IsWorkingLowVolumes and actualAvarageVolume > 0.0003:
-                return
-            if not AP.IsWorkingLowVolumes and actualAvarageVolume < 0.0003:
-                return
+        #if AP.IsTraningUpPeaks :
+        #    if AP.IsWorkingLowVolumes and actualAvarageVolume > 0.0003:
+        #        return
+        #    if not AP.IsWorkingLowVolumes and actualAvarageVolume < 0.0003:
+        #        return
 
         isUpOrDownTrend = pattern.SetPeaks(lastPrice, curTimeInMiliSecs//1000, self.candleDataList, self.dataList)
-        if AP.IsTraningUpPeaks and isUpOrDownTrend == Peaks.PriceTrendSide.DOWN:
-            return
-        if not AP.IsTraningUpPeaks and isUpOrDownTrend == Peaks.PriceTrendSide.UP:
-            return
+        #if AP.IsTraningUpPeaks and isUpOrDownTrend == Peaks.PriceTrendSide.DOWN:
+        #    return
+        #if not AP.IsTraningUpPeaks and isUpOrDownTrend == Peaks.PriceTrendSide.UP:
+        #    return
 
         pattern.firstToLastRatio = self.dataList[0].firstPrice / lastPrice
         #self.__GetWithTime(jsonIn, curTimeInMiliSecs - 10000, curTimeInMiliSecs, 10)
@@ -400,7 +378,9 @@ class SuddenChangeHandler:
         if rules.ControlClamp(AP.AdjustableParameter.AverageVolume, pattern.averageVolume):
             return
 
-        if rules.ControlClamp(AP.AdjustableParameter.JumpCount24H, pattern.jumpCountList[-2]):
+        if rules.ControlClamp(AP.AdjustableParameter.JumpCount24H, pattern.jumpCountList[0]):
+           return
+        if rules.ControlClamp(AP.AdjustableParameter.JumpCount8H, pattern.jumpCountList[1]):
            return
 
         if rules.ControlClamp(AP.AdjustableParameter.NetPrice1H, pattern.netPriceList[0]):
@@ -414,16 +394,15 @@ class SuddenChangeHandler:
         if rules.ControlClamp(AP.AdjustableParameter.NetPrice168H, pattern.netPriceList[4]):
             return
 
-        if rules.ControlClamp(AP.AdjustableParameter.PeakLast0, pattern.peaks[-1]):
-            return
         if rules.ControlClamp(AP.AdjustableParameter.PeakTime0, pattern.timeList[-1]):
             return
         if rules.ControlClamp(AP.AdjustableParameter.PeakTime1, pattern.timeList[-2]):
             return
-        if rules.ControlClamp(AP.AdjustableParameter.DownPeakRatio0, pattern.lastDownRatio):
+        if rules.ControlClamp(AP.AdjustableParameter.PeakTime2, pattern.timeList[-3]):
             return
-        if rules.ControlClamp(AP.AdjustableParameter.UpPeakRatio0, pattern.lastUpRatio):
+        if rules.ControlClamp(AP.AdjustableParameter.PeakTime3, pattern.timeList[-4]):
             return
+
         #if rules.ControlClamp(AP.AdjustableParameter.MarketState, pattern.marketStateList[1]):
         #    return
         if rules.strikeCount < self.smallestStrikeCount:
@@ -478,9 +457,6 @@ class SuddenChangeMerger:
         self.patternList = []
         self.badPatternList = []
 
-        self.mustSellList = []
-        self.keepList = []
-
         self.handlerList = []
         self.peakHelperList = []
         self.transactionParam = transactionParam
@@ -501,11 +477,12 @@ class SuddenChangeMerger:
         return tempHandlers
 
 
-    def Finalize(self):
+    def Finalize(self, isPrint):
         for peak in self.handlerList:
             self.__MergeInTransactions(peak)
             del peak
-        self.Print()
+        if isPrint:
+            self.Print()
 
     def toTransactionFeaturesNumpy(self):
         badCount = len(self.badPatternList)
@@ -526,26 +503,6 @@ class SuddenChangeMerger:
         goodResult = [1] * goodCount
         badResult = [0] * badCount
         returnPatternList = goodResult + badResult
-        return returnPatternList
-
-    def toSellTransactions(self):
-        mustSellCount = len(self.mustSellList)
-        keepCount = len(self.keepList)
-        #self.Print()
-        #mustBuyCount = len(self.mustBuyList)
-        allData = np.concatenate( (self.mustSellList, self.keepList), axis=0)
-        #print(allData)
-        print("Must sell count: ", mustSellCount, " Keep count: ", keepCount)
-        return allData
-
-    def toSellResultsNumpy(self):
-        mustSellCount = len(self.mustSellList)
-        keepCount = len(self.keepList)
-
-        print("Must sell count: ", mustSellCount, " Keep count: ", keepCount)
-        mustSellResult = [0] * keepCount
-        keepResult  = [1] * mustSellCount
-        returnPatternList = mustSellResult + keepResult
         return returnPatternList
 
     def Print(self):
@@ -606,30 +563,21 @@ class SuddenChangeMerger:
         for pattern in handler.patternList:
             self.patternList.append(pattern.GetFeatures(rules) + handler.GetFeatures())
 
-        for pattern in handler.mustBuyList:
-            self.mustBuyList.append(pattern.GetFeatures(rules) + handler.GetFeatures())
-
         for pattern in handler.badPatternList:
             self.badPatternList.append(pattern.GetFeatures(rules) + handler.GetFeatures())
-
-        for pattern in handler.mustSellList:
-            self.mustSellList.append(pattern.GetFeatures(rules) )
-
-        for pattern in handler.keepList:
-            self.keepList.append(pattern.GetFeatures(rules))
 
 class SuddenChangeManager:
 
     def __init__(self, transactionParamList):
         self.marketState = MarketStateManager.MarketStateManager()
         self.FeedMarketState()
-
+        self.isTest = False
         self.transParamList = transactionParamList
         self.suddenChangeMergerList = []
         self.CreateSuddenChangeMergers()
         print(self.suddenChangeMergerList)
         self.FeedChangeMergers()
-        self.FinalizeMergers()
+        self.suddenChangeMergerList[0].Finalize(True)
 
         if AP.IsTeaching:
             for i in range(1000):
@@ -637,6 +585,10 @@ class SuddenChangeManager:
                 self.CreateSuddenChangeMergers()
                 self.FeedChangeMergers()
                 self.FinalizeMergers()
+        else:
+            self.isTest = True
+            self.FeedChangeMergers()
+            self.suddenChangeMergerList[1].Finalize(False)
 
 
     def FeedMarketState(self):
@@ -675,7 +627,7 @@ class SuddenChangeManager:
 
     def ReadFile(self, fileName):
         jumpDataFolderPath = os.path.abspath(os.getcwd()) + "/Data/JumpData/"
-        if AP.IsTraining:
+        if self.isTest or (AP.IsTraining and not AP.IsMachineLearning):
             jumpDataFolderPath = os.path.abspath(os.getcwd()) + "/Data/TestData/"
         print("Reading Jump", jumpDataFolderPath + fileName, " ")
         file = open(jumpDataFolderPath + fileName, "r")
@@ -689,29 +641,38 @@ class SuddenChangeManager:
         #    break
     def FeedChangeMergers(self):
         jumpDataFolderPath = os.path.abspath(os.getcwd()) + "/Data/JumpData/"
-        if AP.IsTraining:
+        if self.isTest or (AP.IsTraining and not AP.IsMachineLearning):
             jumpDataFolderPath = os.path.abspath(os.getcwd()) + "/Data/TestData/"
         onlyJumpFiles = [f for f in listdir(jumpDataFolderPath) if isfile(join(jumpDataFolderPath, f))]
-        lock = multiprocessing.Lock()
-        pool_obj = multiprocessing.Pool(initializer=init_pool_processes, initargs=(lock,))
-        for handlerList in pool_obj.map(self.ReadFile, onlyJumpFiles):
-            self.suddenChangeMergerList[0].handlerList.extend(handlerList)
+        if IsMultiThreaded:
+            lock = multiprocessing.Lock()
+            pool_obj = multiprocessing.Pool(initializer=init_pool_processes, initargs=(lock,), processes=4,maxtasksperchild=300)
+            for handlerList in pool_obj.map(self.ReadFile, onlyJumpFiles):
+                if self.isTest:
+                    self.suddenChangeMergerList[1].handlerList.extend(handlerList)
+                else:
+                    self.suddenChangeMergerList[0].handlerList.extend(handlerList)
+        else:
+            for fileName in onlyJumpFiles:
+                if self.isTest:
+                    self.suddenChangeMergerList[1].handlerList.extend(self.ReadFile(fileName))
+                else:
+                    self.suddenChangeMergerList[0].handlerList.extend(self.ReadFile(fileName))
 
-    def toTransactionFeaturesNumpy(self, index):
-        return self.suddenChangeMergerList[index].toTransactionFeaturesNumpy()
 
-    def toTransactionResultsNumpy(self, index):
-        return self.suddenChangeMergerList[index].toTransactionResultsNumpy()
 
-    def toSellTransactions(self, index):
-        return self.suddenChangeMergerList[index].toSellTransactions()
+    def toTransactionFeaturesNumpy(self, isTest):
+        if isTest:
+            return self.suddenChangeMergerList[1].toTransactionFeaturesNumpy()
+        else:
+            return self.suddenChangeMergerList[0].toTransactionFeaturesNumpy()
 
-    def toSellResultsNumpy(self, index):
-        return self.suddenChangeMergerList[index].toSellResultsNumpy()
+    def toTransactionResultsNumpy(self, isTest):
+        if isTest:
+            return self.suddenChangeMergerList[1].toTransactionResultsNumpy()
+        else:
+            return self.suddenChangeMergerList[0].toTransactionResultsNumpy()
 
-    def FinalizeMergers(self):
-        for transactionIndex in range(len(self.transParamList)):
-            self.suddenChangeMergerList[transactionIndex].Finalize()
         #for transactionIndex in range(len(self.transParamList)):
         #    self.suddenChangeMergerList[transactionIndex].Finalize()
 
@@ -719,3 +680,5 @@ class SuddenChangeManager:
         for transactionIndex in range(len(self.transParamList)):
             newMerger = SuddenChangeMerger(self.transParamList[transactionIndex], self.marketState)
             self.suddenChangeMergerList.append(newMerger)
+            testMerger = SuddenChangeMerger(self.transParamList[transactionIndex], self.marketState)
+            self.suddenChangeMergerList.append(testMerger)
