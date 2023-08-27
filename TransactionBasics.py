@@ -362,7 +362,6 @@ class TransactionPattern:
         returnList.append(self.peaks[-3])
         returnList.append(self.peaks[-4])
         returnList.append(self.peaks[-5])
-
         return returnList
 
     def __repr__(self):

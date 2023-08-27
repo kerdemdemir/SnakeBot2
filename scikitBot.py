@@ -82,8 +82,8 @@ def Predict( messageChangeTimeTransactionStrList, mlpTransactionScalerListIn, ml
     return resultStr
 
 def Learn():
-    mlpTransaction = MLPClassifier(hidden_layer_sizes=(36, 36, 36), activation='relu',
-                                   solver='sgd', learning_rate='adaptive', alpha=0.01, max_iter=500)
+    mlpTransaction = MLPClassifier(hidden_layer_sizes=(24, 24, 24), activation='relu',
+                                   solver='sgd', learning_rate='adaptive', alpha=0.01, max_iter=750)
     global suddenChangeManager
     numpyArr = suddenChangeManager.toTransactionFeaturesNumpy(False)
     transactionScaler = preprocessing.StandardScaler().fit(numpyArr)

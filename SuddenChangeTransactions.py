@@ -17,7 +17,7 @@ import Peaks
 import time
 
 PeakFeatureCount = TransactionBasics.PeakFeatureCount
-IsMultiThreaded = False
+IsMultiThreaded = True
 percent = 0.01
 IsOneFileOnly = False
 totalCounter = 0
@@ -584,7 +584,7 @@ class SuddenChangeManager:
                 self.suddenChangeMergerList = []
                 self.CreateSuddenChangeMergers()
                 self.FeedChangeMergers()
-                self.FinalizeMergers()
+                self.suddenChangeMergerList[0].Finalize(True)
         else:
             self.isTest = True
             self.FeedChangeMergers()
@@ -646,7 +646,7 @@ class SuddenChangeManager:
         onlyJumpFiles = [f for f in listdir(jumpDataFolderPath) if isfile(join(jumpDataFolderPath, f))]
         if IsMultiThreaded:
             lock = multiprocessing.Lock()
-            pool_obj = multiprocessing.Pool(initializer=init_pool_processes, initargs=(lock,), processes=4,maxtasksperchild=300)
+            pool_obj = multiprocessing.Pool(initializer=init_pool_processes, initargs=(lock,), processes=16,maxtasksperchild=500)
             for handlerList in pool_obj.map(self.ReadFile, onlyJumpFiles):
                 if self.isTest:
                     self.suddenChangeMergerList[1].handlerList.extend(handlerList)
