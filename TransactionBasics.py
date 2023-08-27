@@ -292,11 +292,10 @@ class TransactionPattern:
         for i in range(len(self.transactionBuyList)):
             returnList.append(self.transactionBuyList[i]+self.transactionSellList[i])
             returnList.append(self.TotalPower(i))
-            returnList.append(self.TotalPower(i)/self.averageVolume)
             returnList.append(self.buySellRatio[i])
             returnList.append(self.firstLastPriceList[i])
 
-        index = len(self.transactionBuyList)*5
+        index = len(self.transactionBuyList)*4
 
         returnList.append(self.maxDetailBuyPower)
         ruleList.SetIndex(AP.AdjustableParameter.MaxPowInDetail, index)
@@ -322,9 +321,6 @@ class TransactionPattern:
         ruleList.SetIndex(AP.AdjustableParameter.AverageVolume, index)
         index += 1
 
-        returnList.append(self.jumpCountList[0])
-        ruleList.SetIndex(AP.AdjustableParameter.JumpCount24H, index)
-        index += 1
         returnList.append(self.jumpCountList[1])
         ruleList.SetIndex(AP.AdjustableParameter.JumpCount8H, index)
         index += 1
@@ -356,12 +352,11 @@ class TransactionPattern:
         returnList.append( self.timeList[-4] if len(self.timeList) > 3 else self.timeList[-2])
         ruleList.SetIndex(AP.AdjustableParameter.PeakTime3, index)
 
-
-        returnList.append(self.peaks[-1])
-        returnList.append(self.peaks[-2])
-        returnList.append(self.peaks[-3])
-        returnList.append(self.peaks[-4])
         returnList.append(self.peaks[-5])
+        returnList.append(self.peaks[-4])
+        returnList.append(self.peaks[-3])
+        returnList.append(self.peaks[-2])
+        returnList.append(self.peaks[-1])
         return returnList
 
     def __repr__(self):

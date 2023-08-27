@@ -25,18 +25,6 @@
             "tags": "Transaction"
         },
         {
-            "ruleName": "PowerRatio0",
-            "threshold": 0.0015140581306629392,
-            "checkType": "/<",
-            "tags": "Transaction"
-        },
-        {
-            "ruleName": "PowerRatio0",
-            "threshold": 38.6725085379479,
-            "checkType": "/>",
-            "tags": "Transaction"
-        },
-        {
             "ruleName": "BuySellRatio0",
             "threshold": 0.0,
             "checkType": "<",
@@ -85,18 +73,6 @@
             "tags": "Transaction"
         },
         {
-            "ruleName": "PowerRatio1",
-            "threshold": 0.0037002727423059286,
-            "checkType": "/<",
-            "tags": "Transaction"
-        },
-        {
-            "ruleName": "PowerRatio1",
-            "threshold": 153.11161649531803,
-            "checkType": "/>",
-            "tags": "Transaction"
-        },
-        {
             "ruleName": "BuySellRatio1",
             "threshold": 0.0,
             "checkType": "<",
@@ -142,18 +118,6 @@
             "ruleName": "TotalPower2",
             "threshold": 0.29520708265649004,
             "checkType": ">",
-            "tags": "Transaction"
-        },
-        {
-            "ruleName": "PowerRatio2",
-            "threshold": 1.8517008413349836,
-            "checkType": "/<",
-            "tags": "Transaction"
-        },
-        {
-            "ruleName": "PowerRatio2",
-            "threshold": 3506.639517679456,
-            "checkType": "/>",
             "tags": "Transaction"
         },
         {
@@ -251,18 +215,6 @@
             "threshold": 0.0019104279187159418,
             "checkType": ">",
             "tags": "AverageVolume"
-        },
-        {
-            "ruleName": "JumpCount24H",
-            "threshold": 0.9999,
-            "checkType": "<",
-            "tags": "PeakTime"
-        },
-        {
-            "ruleName": "JumpCount24H",
-            "threshold": 331.0331,
-            "checkType": ">",
-            "tags": "PeakTime"
         },
         {
             "ruleName": "JumpCount8H",

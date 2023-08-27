@@ -218,7 +218,7 @@ class SuddenChangeHandler:
         buySellPriceRatio = self.reportPrice / self.jumpPrice
 
         timeDiff = time.time() - self.reportTimeInSeconds
-        if self.isAfterBuyRecord and timeDiff < (60*60*24*7):
+        if AP.IsTeaching and self.isAfterBuyRecord and timeDiff < (60*60*24*7):
             print("Extending the list because it happened very soon")
             if len(self.badPatternList) < 15:
                 self.badPatternList.extend(self.badPatternList)
@@ -350,9 +350,6 @@ class SuddenChangeHandler:
             if rules.ControlClampIndex(k, pattern.TotalPower(i)):
                 return
             k+=2
-            if rules.ControlClampIndexDivider(k, pattern.TotalPower(i), actualAvarageVolume):
-                return
-            k+=2
             if rules.ControlClampIndex(k, pattern.buySellRatio[i]):
                 return
             k+=2
@@ -378,8 +375,6 @@ class SuddenChangeHandler:
         if rules.ControlClamp(AP.AdjustableParameter.AverageVolume, pattern.averageVolume):
             return
 
-        if rules.ControlClamp(AP.AdjustableParameter.JumpCount24H, pattern.jumpCountList[0]):
-           return
         if rules.ControlClamp(AP.AdjustableParameter.JumpCount8H, pattern.jumpCountList[1]):
            return
 
@@ -491,7 +486,10 @@ class SuddenChangeMerger:
         #mustBuyCount = len(self.mustBuyList)
         print("Good count: ", goodCount, " Bad Count: ", badCount)
 
-        allData = np.concatenate( (self.patternList, self.badPatternList), axis=0)
+        if goodCount > 0 :
+            allData = np.concatenate( (self.patternList, self.badPatternList), axis=0)
+        else:
+            allData = self.badPatternList
         return allData
 
     def toTransactionResultsNumpy(self):

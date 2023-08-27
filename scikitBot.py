@@ -24,8 +24,8 @@ acceptedProbibilty = 0.7
 testRatio = 4
 transParamList = [TransactionBasics.TransactionParam(10000, 3)]
 
-mlpTransactionList = []
-mlpTransactionScalerList = []
+transactionScaler = None
+mlpTransaction = None
 
 currentProbs = []
 parameter_space = {
@@ -36,55 +36,43 @@ parameter_space = {
 
 suddenChangeManager = SuddenChangeTransactions.SuddenChangeManager(transParamList)
 
-def Predict( messageChangeTimeTransactionStrList, mlpTransactionScalerListIn, mlpTransactionListIn, isBuySell, isAvoidPeaks ):
+parameterHeaders = ["TotalCount0", "TotalPower0", "BuySellRatio0", "Price0", "TotalCount1", "TotalPower1", "BuySellRatio1",
+                    "Price1", "TotalCount2", "TotalPower2", "BuySellRatio2", "Price2", "MaxPowInDetail", "BuyWall", "SellWall",
+                    "BuyLongWall", "SellLongWall",  "AverageVolume", "JumpCount8H", "NetPrice1H", "NetPrice8H", "NetPrice24H",
+                    "NetPrice72H", "NetPrice168H","PeakTime0", "PeakTime1", "PeakTime2", "PeakTime3"]
+def Predict( messageChangeTimeTransactionStrList):
 
     priceStrList = messageChangeTimeTransactionStrList[0].split(",")
-    timeStrList = messageChangeTimeTransactionStrList[1].split(",")
-    transactionStrList = messageChangeTimeTransactionStrList[2].split(",")
-    extrasStrList = messageChangeTimeTransactionStrList[3].split(",")
+    parameterKeyValues = messageChangeTimeTransactionStrList[1].split(":")[1].split("|")
+
     resultsChangeFloat = [float(messageStr) for messageStr in priceStrList]
-    resultsTimeFloat = [float(timeStr) for timeStr in timeStrList]
-    resultsExtraFloat = [float(extraStr) for extraStr in extrasStrList]
+    dictionaryParams = {}
 
-    resultsTransactionFloat = [float(transactionStr) for transactionStr in transactionStrList]
+    for parameterKeyVal in parameterKeyValues:
+        keyValList = parameterKeyVal.split(",")
+        dictionaryParams[keyValList[0]] = float(keyValList[1])
 
-    extraMaxMinList = []
-    resultStr = ""
+    parameterList = []
+    for key in parameterHeaders:
+        parameterList.append(dictionaryParams[key])
 
-    for transactionIndex in range(len(transParamList)):
-        transParam = transParamList[transactionIndex]
-        justTransactions = resultsTransactionFloat
-        multipliedGramCount = TransactionBasics.GetTotalPatternCount(transParam.gramCount)
-        basicList = TransactionBasics.CreateTransactionList(currentTransactionList)
-        basicList = TransactionBasics.ReduceToNGrams(basicList, transParam.gramCount)
-        currentTransactionList = TransactionBasics.GetListFromBasicTransData(basicList)
-        # + marketStateList market state is cancelled for now
-        #totalFeatures = currentTransactionList  + resultsChangeFloat[-TransactionBasics.PeakFeatureCount:] + resultsTimeFloat[-TransactionBasics.PeakFeatureCount:]
-        if TransactionBasics.PeakFeatureCount == 0 or isBuySell :
-            totalFeatures = currentTransactionList #+ resultsExtraFloat
-        else:
-            totalFeatures = currentTransactionList +\
-                            resultsChangeFloat[-TransactionBasics.PeakFeatureCount:] + \
-                            resultsTimeFloat[-TransactionBasics.PeakFeatureCount:] + extraMaxMinList
+    totalFeatures = parameterList + resultsChangeFloat[-5:]
 
-
-        totalFeaturesNumpy = np.array(totalFeatures).reshape(1, -1)
-        totalFeaturesScaled = mlpTransactionScalerListIn[transactionIndex].transform(totalFeaturesNumpy)
-        print("I will predict: ", totalFeatures, " scaled: ", totalFeaturesScaled)
-        npTotalFeatures = np.array(totalFeaturesScaled)
-        npTotalFeatures = npTotalFeatures.reshape(1, -1)
-        predict_test = mlpTransactionListIn[transactionIndex].predict_proba(npTotalFeatures)
-        curResultStr = str(predict_test) + ";"
-        resultStr += curResultStr
-
-    resultStr = resultStr[:-1]
-    print("Results are: ", resultStr)
-    return resultStr
+    totalFeaturesNumpy = np.array(totalFeatures).reshape(1, -1)
+    totalFeaturesScaled = transactionScaler.transform(totalFeaturesNumpy)
+    print("I will predict: ", totalFeatures, " scaled: ", totalFeaturesScaled)
+    npTotalFeatures = np.array(totalFeaturesScaled)
+    npTotalFeatures = npTotalFeatures.reshape(1, -1)
+    predict_test = mlpTransaction.predict_proba(npTotalFeatures)
+    return predict_test[1]
 
 def Learn():
+    global suddenChangeManager
+    global transactionScaler
+    global mlpTransaction
+
     mlpTransaction = MLPClassifier(hidden_layer_sizes=(24, 24, 24), activation='relu',
                                    solver='sgd', learning_rate='adaptive', alpha=0.01, max_iter=750)
-    global suddenChangeManager
     numpyArr = suddenChangeManager.toTransactionFeaturesNumpy(False)
     transactionScaler = preprocessing.StandardScaler().fit(numpyArr)
     X = transactionScaler.transform(numpyArr)
@@ -101,8 +89,6 @@ def Learn():
 
 
     predict_test = mlpTransaction.predict_proba(X_test)
-    #print(predict_test)
-
     finalResult = predict_test[:, 1] >= 0.5
     returnResult = confusion_matrix(y_test, finalResult)
     print("50 ", returnResult)
@@ -146,8 +132,7 @@ while True:
     command = messageChangeTimeTransactionStrList[0]
 
     if command == "Predict":
-        messageChangeTimeTransactionStrList = messageChangeTimeTransactionStrList[1:]
-        resultStr = Predict(messageChangeTimeTransactionStrList, mlpTransactionScalerList, mlpTransactionList, False, False)
+        resultStr = Predict(messageChangeTimeTransactionStrList)
         print("Results are: ", resultStr)
         #  Send reply back to client
         socket.send_string(resultStr, encoding='ascii')
