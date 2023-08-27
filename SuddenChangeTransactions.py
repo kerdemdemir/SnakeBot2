@@ -116,7 +116,7 @@ class SuddenChangeHandler:
         #maxRise = [self.GetCount(60 * 6), self.GetCount(60 * 24), self.GetCount(60 * 24 * 3), self.GetCount(60 * 24 * 7 ), self.GetCount(60 * 24 * 30 ), self.GetCount(60 * 24 * 90 )]
         #return maxRise
         #return TransactionBasics.GetMaxMinList( self.maxMinList ) #+ maxRise
-        return [self.smallestStrikeCount,-4]
+        return []
        #return self.timeList[-PeakFeatureCount:] + self.riseList[-PeakFeatureCount:]
        #return [self.riseList[-1] / self.riseList[-3], self.riseList[-2] / self.riseList[-4], self.riseList[-3] / self.riseList[-5], self.riseList[-4] / self.riseList[-6]]
         #return []

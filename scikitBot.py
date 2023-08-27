@@ -42,8 +42,8 @@ parameterHeaders = ["TotalCount0", "TotalPower0", "BuySellRatio0", "Price0", "To
                     "NetPrice72H", "NetPrice168H","PeakTime0", "PeakTime1", "PeakTime2", "PeakTime3"]
 def Predict( messageChangeTimeTransactionStrList):
 
-    priceStrList = messageChangeTimeTransactionStrList[0].split(",")
-    parameterKeyValues = messageChangeTimeTransactionStrList[1].split(":")[1].split("|")
+    priceStrList = messageChangeTimeTransactionStrList[1].split(",")
+    parameterKeyValues = messageChangeTimeTransactionStrList[2].split(":")[1].split("|")
 
     resultsChangeFloat = [float(messageStr) for messageStr in priceStrList]
     dictionaryParams = {}
@@ -64,7 +64,7 @@ def Predict( messageChangeTimeTransactionStrList):
     npTotalFeatures = np.array(totalFeaturesScaled)
     npTotalFeatures = npTotalFeatures.reshape(1, -1)
     predict_test = mlpTransaction.predict_proba(npTotalFeatures)
-    return predict_test[1]
+    return str(predict_test[0][1])
 
 def Learn():
     global suddenChangeManager
