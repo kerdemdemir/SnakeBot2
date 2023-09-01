@@ -3,7 +3,7 @@ import Peaks
 
 PeakFeatureCount = 6
 MaximumSampleSizeFromPattern = 100000
-MaximumSampleSizeFromGoodPattern = 8
+MaximumSampleSizeFromGoodPattern = 6
 TransactionCountPerSecBase = 3
 TransactionLimitPerSecBase = 0.1
 TotalPowerLimit = 0.5
@@ -124,7 +124,7 @@ class TransactionData:
             self.firstPrice = float(jsonIn["p"])
             self.minPrice = self.firstPrice
             self.maxPrice = self.firstPrice
-        self.SetCurPrice(jsonIn)
+        self.lastPrice = float(jsonIn["p"])
         curTime = int(jsonIn["T"]) // 1000
         if self.lastPrice > self.maxPrice:
             self.maxPrice = self.lastPrice
@@ -292,10 +292,11 @@ class TransactionPattern:
         for i in range(len(self.transactionBuyList)):
             returnList.append(self.transactionBuyList[i]+self.transactionSellList[i])
             returnList.append(self.TotalPower(i))
+            returnList.append(self.TotalPower(i) / self.averageVolume)
             returnList.append(self.buySellRatio[i])
             returnList.append(self.firstLastPriceList[i])
 
-        index = len(self.transactionBuyList)*4
+        index = len(self.transactionBuyList)*5
 
         returnList.append(self.maxDetailBuyPower)
         ruleList.SetIndex(AP.AdjustableParameter.MaxPowInDetail, index)

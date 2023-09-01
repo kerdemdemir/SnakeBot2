@@ -275,6 +275,8 @@ class CandleDataList:
                 changeList.append(peak.GetChange())
                 timeList.append(peak.GetTimeDiff())
                 newPriceList.append(peak.GetLastPrice())
+                if len(changeList) > 10:
+                    break
         changeList.reverse()
         timeList.reverse()
         newPriceList.reverse()

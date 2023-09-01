@@ -208,8 +208,23 @@ class SuddenChangeHandler:
                 self.patternList.clear()
                 self.patternList.append(self.bestPattern)
             else:
+
+                minimumPattern = min(self.patternList, key=lambda x:int(x.lastPrice))
                 self.patternList = random.sample(self.patternList,
                                                  TransactionBasics.MaximumSampleSizeFromGoodPattern - 1)
+                self.patternList.append(minimumPattern)
+
+
+
+        if len(self.patternList) > 0 and len(self.patternList) < TransactionBasics.MaximumSampleSizeFromGoodPattern/2:
+            print("Positive extending the list because it happened very soon")
+            while len(self.patternList) < TransactionBasics.MaximumSampleSizeFromGoodPattern/2:
+                self.patternList.extend(self.patternList)
+
+        if len(self.badPatternList) > 0 and len(self.badPatternList) < TransactionBasics.MaximumSampleSizeFromGoodPattern:
+            print("Negative extending the list because it happened very soon")
+            while len(self.badPatternList) < TransactionBasics.MaximumSampleSizeFromGoodPattern:
+                self.badPatternList.extend(self.badPatternList)
 
         if len(self.badPatternList) > TransactionBasics.MaximumSampleSizeFromPattern:
             randomSampleList = random.sample(self.badPatternList, TransactionBasics.MaximumSampleSizeFromPattern-1)
@@ -219,8 +234,8 @@ class SuddenChangeHandler:
 
         timeDiff = time.time() - self.reportTimeInSeconds
         if AP.IsTeaching and self.isAfterBuyRecord and timeDiff < (60*60*24*7):
-            print("Extending the list because it happened very soon")
             if len(self.badPatternList) < 15:
+                print("Extending the list because it happened very soon")
                 self.badPatternList.extend(self.badPatternList)
             if buySellPriceRatio < 0.97 :
                 print("Double Extending the list because it happened very soon")
@@ -350,6 +365,9 @@ class SuddenChangeHandler:
             if rules.ControlClampIndex(k, pattern.TotalPower(i)):
                 return
             k+=2
+            if rules.ControlClampIndexDivider(k, pattern.TotalPower(i), actualAvarageVolume):
+                return
+            k += 2
             if rules.ControlClampIndex(k, pattern.buySellRatio[i]):
                 return
             k+=2
@@ -400,8 +418,6 @@ class SuddenChangeHandler:
 
         #if rules.ControlClamp(AP.AdjustableParameter.MarketState, pattern.marketStateList[1]):
         #    return
-        if rules.strikeCount < self.smallestStrikeCount:
-            self.bestPattern = pattern
 
         self.smallestStrikeCount = min(self.smallestStrikeCount, rules.strikeCount)
         #print(pattern.marketStateList)
