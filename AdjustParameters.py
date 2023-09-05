@@ -304,7 +304,7 @@ class RuleList:
             curVal = rule.badCount - rule.goodCount
             if rule.goodCount > 0.25:
                 curVal /= (rule.goodCount/0.1)
-            if curVal > bestVal and not rule.isTuned and rule.tuneCount <= 3 :
+            if curVal > bestVal and not rule.isTuned and rule.tuneCount <= 5 :
                 bestVal = curVal
                 selectedRule = rule
         selectedRule.tuneCount += 1
