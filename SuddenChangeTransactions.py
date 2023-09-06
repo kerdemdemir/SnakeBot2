@@ -612,6 +612,7 @@ class SuddenChangeManager:
         downCount = 0
         for fileName in onlyJumpFiles:
             print("Reading market state", jumpDataFolderPath + fileName, " ")
+            sys.stdout.flush()
             file = open(jumpDataFolderPath + fileName, "r")
             epoch = datetime.utcfromtimestamp(0)
             try:
