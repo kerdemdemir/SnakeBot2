@@ -23,6 +23,7 @@ isUseExtraData = False
 acceptedProbibilty = 0.7
 testRatio = 4
 transParamList = [TransactionBasics.TransactionParam(10000, 3)]
+isUseTest = False
 
 transactionScaler = None
 mlpTransaction = None
@@ -79,44 +80,44 @@ def Learn():
     transactionScaler = preprocessing.StandardScaler().fit(numpyArr)
     X = transactionScaler.transform(numpyArr)
     y = suddenChangeManager.toTransactionResultsNumpy(False) #+ extraDataManager.getResult(transactionIndex)
-    numpyArrTest = suddenChangeManager.toTransactionFeaturesNumpy(True)
-    X_test = transactionScaler.transform(numpyArrTest)
-    y_test = suddenChangeManager.toTransactionResultsNumpy(True)
+    if isUseTest:
+        numpyArrTest = suddenChangeManager.toTransactionFeaturesNumpy(True)
+        X_test = transactionScaler.transform(numpyArrTest)
+        y_test = suddenChangeManager.toTransactionResultsNumpy(True)
     del suddenChangeManager
 
     mlpTransaction.fit(X, y)
 
     #X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.05, random_state=40)
 
+    if isUseTest:
+        predict_test = mlpTransaction.predict_proba(X_test)
+        finalResult = predict_test[:, 1] >= 0.5
+        returnResult = confusion_matrix(y_test, finalResult)
+        print("50 ", returnResult)
 
+        finalResult = predict_test[:, 1] >= 0.6
+        returnResult = confusion_matrix(y_test, finalResult)
+        print("60 ", returnResult)
 
-    predict_test = mlpTransaction.predict_proba(X_test)
-    finalResult = predict_test[:, 1] >= 0.5
-    returnResult = confusion_matrix(y_test, finalResult)
-    print("50 ", returnResult)
+        finalResult = predict_test[:, 1] >= 0.7
+        returnResult = confusion_matrix(y_test, finalResult)
+        print("70 ", returnResult)
 
-    finalResult = predict_test[:, 1] >= 0.6
-    returnResult = confusion_matrix(y_test, finalResult)
-    print("60 ", returnResult)
+        finalResult = predict_test[:, 1] >= 0.8
+        returnResult = confusion_matrix(y_test, finalResult)
+        print("80 ", returnResult)
 
-    finalResult = predict_test[:, 1] >= 0.7
-    returnResult = confusion_matrix(y_test, finalResult)
-    print("70 ", returnResult)
-
-    finalResult = predict_test[:, 1] >= 0.8
-    returnResult = confusion_matrix(y_test, finalResult)
-    print("80 ", returnResult)
-
-    finalResult = predict_test[:, 1] >= 0.9
-    returnResult = confusion_matrix(y_test, finalResult)
-    print("90 ", returnResult)
-    #print(predict_test)
-    #predict_test = np.delete(finalResult, 0, 1)
+        finalResult = predict_test[:, 1] >= 0.9
+        returnResult = confusion_matrix(y_test, finalResult)
+        print("90 ", returnResult)
+        #print(predict_test)
+        #predict_test = np.delete(finalResult, 0, 1)
 
     print(" Transactions learning done")
 
     sys.stdout.flush()
-    return returnResult
+    return
 
 
 Learn()
