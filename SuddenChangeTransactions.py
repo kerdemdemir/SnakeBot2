@@ -576,11 +576,16 @@ class SuddenChangeMerger:
     def __MergeInTransactions(self, handler):
         for pattern in handler.patternList:
             if pattern is not None:
-                self.patternList.append(pattern.GetFeatures(rules))
+                features = pattern.GetFeatures(rules)
+                if features is not None:
+                    self.patternList.append(features)
+
 
         for pattern in handler.badPatternList:
             if pattern is not None:
-                self.badPatternList.append(pattern.GetFeatures(rules))
+                features = pattern.GetFeatures(rules)
+                if features is not None:
+                    self.badPatternList.append(features)
 
 class SuddenChangeManager:
 
