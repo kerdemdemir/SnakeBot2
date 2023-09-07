@@ -17,7 +17,7 @@ import Peaks
 import time
 
 PeakFeatureCount = TransactionBasics.PeakFeatureCount
-IsMultiThreaded = False
+IsMultiThreaded = True
 percent = 0.01
 IsOneFileOnly = False
 totalCounter = 0
@@ -349,9 +349,10 @@ class SuddenChangeHandler:
 
         pattern.timeToJump = self.reportTimeInSeconds - self.dataList[curIndex].timeInSecs
 
-        moreDetailDataList = []
-        self.__DivideDataInSeconds(jsonIn, 250, moreDetailDataList, secondData.endIndex, lastData.endIndex)
-        pattern.SetDetailedTransaction(moreDetailDataList, dataRange)
+        lastMiniData = self.__GetWithTime(jsonIn, secondData.endIndex - 1, curTimeInMiliSecs - 1000, curTimeInMiliSecs, 1)
+        if lastMiniData.totalBuy < 0.015:
+            return
+        pattern.SetDetailedTransaction(lastMiniData)
         pattern.Append( dataRange, actualAvarageVolume, self.jumpTimeInSeconds, self.jumpPrice, self.marketState)
         if pattern.marketStateList[1] > 3:
             return
@@ -374,9 +375,6 @@ class SuddenChangeHandler:
             if rules.ControlClampIndex(k, pattern.firstLastPriceList[i]):
                 return
             k+=2
-
-        #if rules.ControlClamp(AP.AdjustableParameter.DetailLen, pattern.detailLen):
-        #    return
 
         if rules.ControlClamp(AP.AdjustableParameter.MaxPowInDetail, pattern.maxDetailBuyPower):
             return

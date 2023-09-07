@@ -228,10 +228,10 @@ class TransactionPattern:
     def GoalReached(self, timeDiff, goal):
         self.timeToJump = timeDiff
 
-    def SetDetailedTransaction(self, detailedTransactionList, dataRange):
-        buyPowerList = list(map(lambda x: x.totalBuy, detailedTransactionList))
-        self.detailLen = len(buyPowerList)
-        self.maxDetailBuyPower = max(buyPowerList)
+    def SetDetailedTransaction(self, lastPattern):
+        #TransactionBasics.TransactionData
+        self.detailLen = lastPattern.transactionBuyCount
+        self.maxDetailBuyPower = lastPattern.totalBuy
 
 
     def SetPeaks(self, curPrice, curTime, candleSticks, dataList ):
