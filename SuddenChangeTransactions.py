@@ -434,15 +434,15 @@ class SuddenChangeHandler:
         if self.isRise:
             if self.isAfterBuyRecord:
                 return 1
-            if priceIn < self.reportPrice * 0.97:
+            if priceIn < self.reportPrice * 0.95:
                 for i in range(curIndex+1, len(self.dataList)):
                     ratio = self.dataList[i].lastPrice / priceIn
                     timeDiff = self.dataList[i].endIndex - self.dataList[curIndex].endIndex
                     #pattern.UpdatePrice(timeDiff, ratio)
                     if ratio<0.98:
                         return -1
-                    if ratio>1.025:
-                        pattern.GoalReached(timeDiff, 1.025)
+                    if ratio>1.04:
+                        pattern.GoalReached(timeDiff, 1.04)
                         return 1
                 return -1
         else:
