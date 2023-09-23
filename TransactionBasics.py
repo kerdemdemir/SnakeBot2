@@ -292,30 +292,13 @@ class TransactionPattern:
         for i in range(len(self.transactionBuyList)):
             returnList.append(self.transactionBuyList[i]+self.transactionSellList[i])
             returnList.append(self.TotalPower(i))
-            returnList.append(self.TotalPower(i) / self.averageVolume)
             returnList.append(self.buySellRatio[i])
             returnList.append(self.firstLastPriceList[i])
 
-        index = len(self.transactionBuyList)*5
+        index = len(self.transactionBuyList)*4
 
         returnList.append(self.maxDetailBuyPower)
         ruleList.SetIndex(AP.AdjustableParameter.MaxPowInDetail, index)
-        index += 1
-
-        returnList.append(self.buyWall)
-        ruleList.SetIndex(AP.AdjustableParameter.BuyWall, index)
-        index += 1
-
-        returnList.append(self.sellWall)
-        ruleList.SetIndex(AP.AdjustableParameter.SellWall, index)
-        index += 1
-
-        returnList.append(self.buyLongWall)
-        ruleList.SetIndex(AP.AdjustableParameter.BuyLongWall, index)
-        index += 1
-
-        returnList.append(self.sellLongWall)
-        ruleList.SetIndex(AP.AdjustableParameter.SellLongWall, index)
         index += 1
 
         returnList.append(self.averageVolume)

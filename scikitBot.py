@@ -37,11 +37,10 @@ parameter_space = {
 
 suddenChangeManager = SuddenChangeTransactions.SuddenChangeManager(transParamList)
 
-parameterHeaders = ["TotalCount0", "TotalPower0","PowerRatio0", "BuySellRatio0", "Price0",
-                    "TotalCount1","TotalPower1","PowerRatio1","BuySellRatio1","Price1",
-                    "TotalCount2", "TotalPower2","PowerRatio2", "BuySellRatio2", "Price2",
-                    "MaxPowInDetail", "BuyWall", "SellWall","BuyLongWall", "SellLongWall",
-                    "AverageVolume", "JumpCount8H", "NetPrice1H", "NetPrice8H", "NetPrice24H",
+parameterHeaders = ["TotalCount0", "TotalPower0", "BuySellRatio0", "Price0",
+                    "TotalCount1","TotalPower1","BuySellRatio1","Price1",
+                    "TotalCount2", "TotalPower2", "BuySellRatio2", "Price2",
+                    "MaxPowInDetail", "AverageVolume", "JumpCount8H", "NetPrice1H", "NetPrice8H", "NetPrice24H",
                     "NetPrice72H", "NetPrice168H","PeakTime0", "PeakTime1", "PeakTime2", "PeakTime3"]
 def Predict( messageChangeTimeTransactionStrList):
 
