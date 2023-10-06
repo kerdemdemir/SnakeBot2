@@ -240,7 +240,7 @@ class TransactionPattern:
                              curPrice / candleSticks.GetPrice(curTime, 60*60*24), curPrice / candleSticks.GetPrice(curTime, 60*60*72),
                              curPrice / candleSticks.GetPrice(curTime, 60*60*24*10)]
 
-        self.jumpCountList = [candleSticks.CountPeaks(curTime, 60*60*24),candleSticks.CountPeaks(curTime, 60*60*8)]
+        self.jumpCountList = [candleSticks.CountPeaks(curTime, 60*60*24),candleSticks.CountPeaks(curTime, 60*60*6)]
         self.peaks = peakListAndTimeList[0][-10:]
         self.timeList = peakListAndTimeList[1][-10:]
         self.priceList = peakListAndTimeList[2][-10:]

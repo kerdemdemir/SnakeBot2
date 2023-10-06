@@ -220,12 +220,12 @@ class SuddenChangeHandler:
 
 
         if len(self.patternList) > 0 and len(self.patternList) < TransactionBasics.MaximumSampleSizeFromGoodPattern/2:
-            print("Positive extending the list because it happened very soon")
+            #print("Positive extending the list because it happened very soon")
             while len(self.patternList) < TransactionBasics.MaximumSampleSizeFromGoodPattern/2:
                 self.patternList.extend(self.patternList)
 
         if len(self.badPatternList) > 0 and len(self.badPatternList) < TransactionBasics.MaximumSampleSizeFromGoodPattern:
-            print("Negative extending the list because it happened very soon")
+            #print("Negative extending the list because it happened very soon")
             while len(self.badPatternList) < TransactionBasics.MaximumSampleSizeFromGoodPattern:
                 self.badPatternList.extend(self.badPatternList)
 
@@ -238,10 +238,10 @@ class SuddenChangeHandler:
         timeDiff = time.time() - self.reportTimeInSeconds
         if AP.IsTeaching and self.isAfterBuyRecord and timeDiff < (60*60*24*7):
             if len(self.badPatternList) < 15:
-                print("Extending the list because it happened very soon")
+                #print("Extending the list because it happened very soon")
                 self.badPatternList.extend(self.badPatternList)
             if buySellPriceRatio < 0.97 :
-                print("Double Extending the list because it happened very soon")
+                #print("Double Extending the list because it happened very soon")
                 self.badPatternList.extend(self.badPatternList)
 
         if len(self.badPatternList) == 0 and len(self.patternList) == 0 :
@@ -368,7 +368,12 @@ class SuddenChangeHandler:
         pattern.Append( dataRange, actualAvarageVolume, self.jumpTimeInSeconds, self.jumpPrice, self.marketState)
         if pattern.marketStateList[1] > 3:
             return
-
+        if pattern.jumpCountList[1] > 10:
+            return
+        if pattern.firstLastPriceList[0] > 1.05:
+            return
+        if pattern.netPriceList[0] > 1.1:
+            return
         k = 0
         rules.strikeCount = 0
         for i in range(len(pattern.transactionBuyList)):
@@ -441,8 +446,8 @@ class SuddenChangeHandler:
                     return -1
                 if ratio<0.98:
                     return -1
-                if ratio>1.05:
-                    pattern.GoalReached(timeDiff, 1.05)
+                if ratio>1.1:
+                    pattern.GoalReached(timeDiff, 1.1)
                     return 1
             return -1
         else:
