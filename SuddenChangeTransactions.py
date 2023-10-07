@@ -17,7 +17,7 @@ import Peaks
 import time
 
 PeakFeatureCount = TransactionBasics.PeakFeatureCount
-IsMultiThreaded = True
+IsMultiThreaded = False
 percent = 0.01
 IsOneFileOnly = False
 totalCounter = 0
@@ -84,7 +84,7 @@ class SuddenChangeHandler:
                 if buySellPriceRatio < 1.02:
                     return
             else:
-                if buySellPriceRatio > 1.0:
+                if buySellPriceRatio > 1.05:
                     return
 
         self.lowestTransaction = TransactionBasics.TransactionCountPerSecBase
@@ -290,12 +290,13 @@ class SuddenChangeHandler:
         curPattern = self.dataList[curIndex]
         curTimeInMiliSecs = jsonIn[curPattern.endIndex]["T"]
         interestTime = 0
-        #if interestTime - curTimeInMiliSecs < 10000 and self.currencyName == "SCRT":
+        #if interestTime - curTimeInMiliSecs < 10000 and self.currencyName == "LOOM":
         #    print("ALERT")
 
-        if startBin < 0 :
+        if startBin < 0:
             return
-        if curPattern.totalBuy < 0.03:
+        powerLimit = 0.03
+        if curPattern.totalBuy + curPattern.totalSell < powerLimit:
             return
 
         if curPattern.lastBuyLongWall != 0.0 or curPattern.lastSellLongWall != 0.0:
@@ -306,8 +307,6 @@ class SuddenChangeHandler:
                 return
 
         pattern = TransactionBasics.TransactionPattern()
-
-
         lastPrice = curPattern.lastPrice
         currentPowSum = 0.0
 
@@ -321,10 +320,9 @@ class SuddenChangeHandler:
                     break
         else:
             for x in range(curPattern.startIndex,curPattern.endIndex):
-                if not bool(jsonIn[x]["m"]):
-                    currentPowSum += float(jsonIn[x]["q"]) * float(jsonIn[x]["p"])
-                    lastPrice = float(jsonIn[x]["p"])
-                if currentPowSum > 0.03:
+                currentPowSum += float(jsonIn[x]["q"]) * float(jsonIn[x]["p"])
+                lastPrice = float(jsonIn[x]["p"])
+                if currentPowSum > powerLimit:
                     actualEndIndex = x
                     curTimeInMiliSecs = jsonIn[x]["T"]
                     break
@@ -362,17 +360,11 @@ class SuddenChangeHandler:
         pattern.timeToJump = self.reportTimeInSeconds - self.dataList[curIndex].timeInSecs
 
         lastMiniData = self.__GetWithTime(jsonIn, secondData.endIndex - 1, curTimeInMiliSecs - 1000, curTimeInMiliSecs, 1)
-        if lastMiniData.totalBuy < 0.015:
+        if lastMiniData.totalBuy < 0.004:
             return
         pattern.SetDetailedTransaction(lastMiniData)
         pattern.Append( dataRange, actualAvarageVolume, self.jumpTimeInSeconds, self.jumpPrice, self.marketState)
         if pattern.marketStateList[1] > 3:
-            return
-        if pattern.jumpCountList[1] > 10:
-            return
-        if pattern.firstLastPriceList[0] > 1.05:
-            return
-        if pattern.netPriceList[0] > 1.1:
             return
         k = 0
         rules.strikeCount = 0
@@ -437,8 +429,6 @@ class SuddenChangeHandler:
 
     def __GetCategory(self, curIndex, priceIn, pattern):
         if self.isRise:
-            if self.isAfterBuyRecord:
-                return 1
             for i in range(curIndex+1, len(self.dataList)):
                 ratio = self.dataList[i].lastPrice / priceIn
                 timeDiff = self.dataList[i].endTimeInSecs - self.dataList[curIndex].endTimeInSecs
@@ -532,11 +522,12 @@ class SuddenChangeMerger:
         badList = np.array(self.badPatternList)
         print("Good count: ", len(self.patternList), "Bad Count", len(self.badPatternList))
 
+
         for i in range(len(self.patternList[0])):
             if not AP.IsTraining:
                 curRules = rules.GetRulesWithIndex(i)
                 for rule in curRules:
-                    rule.SetFromValue(buyList[:, i], False)
+                    rule.SetFromValue(buyList[:, i], False)#not rules.isTuned
                     rule.Print()
 
             buyLegend = str(np.quantile(buyList[:, i], 0.0)) + "," + str(np.quantile(buyList[:, i], 0.1)) + "," + str(
@@ -656,7 +647,7 @@ class SuddenChangeManager:
 
     def ReadFile(self, fileName):
         file = open(fileName, "r")
-        print("Reading file: ", fileName)
+        #print("Reading file: ", fileName)
         jsonDictionary = json.load(file)
         return self.suddenChangeMergerList[0].AddFile(jsonDictionary, fileName)
 
