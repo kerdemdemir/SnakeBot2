@@ -436,8 +436,8 @@ class SuddenChangeHandler:
                     return -1
                 if ratio<0.98:
                     return -1
-                if ratio>1.1:
-                    pattern.GoalReached(timeDiff, 1.1)
+                if ratio>1.25:
+                    pattern.GoalReached(timeDiff, 1.25)
                     return 1
             return -1
         else:

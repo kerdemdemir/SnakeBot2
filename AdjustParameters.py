@@ -184,9 +184,9 @@ class Rule:
         value = np.amin(list) if self.IsSmall() else np.amax(list)
         if isThougher:
             if self.IsSmall():
-                value = np.quantile(list, 0.05 if self.IsSmall() else 1.0 - 0.05)
+                value = np.quantile(list, 0.02 if self.IsSmall() else 1.0 - 0.02)
             else:
-                value = np.quantile(list, 0.05 if self.IsSmall() else 1.0 - 0.05)
+                value = np.quantile(list, 0.02 if self.IsSmall() else 1.0 - 0.02)
 
 
         if self.IsSmall() and value < self.threshold:
@@ -302,8 +302,8 @@ class RuleList:
                 continue
 
             curVal = rule.badCount - rule.goodCount
-            if rule.goodCount > 0.25:
-                curVal /= (rule.goodCount/0.1)
+            #if rule.goodCount > 0.25:
+            #    curVal /= (rule.goodCount/0.1)
             if curVal > bestVal and not rule.isTuned and rule.tuneCount <= 5 :
                 bestVal = curVal
                 selectedRule = rule
