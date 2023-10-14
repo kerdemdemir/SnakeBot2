@@ -301,6 +301,8 @@ class RuleList:
             if rule.isSkipTuning:
                 continue
 
+            if rule.quantileVal == rule.threshold:
+                continue
             curVal = rule.badCount - rule.goodCount
             #if rule.goodCount > 0.25:
             #    curVal /= (rule.goodCount/0.1)

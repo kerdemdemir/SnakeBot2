@@ -14,10 +14,12 @@ import AdjustParameters as AP
 import sys
 import multiprocessing
 import Peaks
+from memory_profiler import profile
+
 import time
 
 PeakFeatureCount = TransactionBasics.PeakFeatureCount
-IsMultiThreaded = False
+IsMultiThreaded = True
 percent = 0.01
 IsOneFileOnly = False
 totalCounter = 0
@@ -433,8 +435,14 @@ class SuddenChangeMerger:
 
     def __init__(self, transactionParam, marketState):
         self.mustBuyList = []
-        self.patternList = []
-        self.badPatternList = []
+
+        if IsMultiThreaded :
+            manager = multiprocessing.Manager()
+            self.patternList = manager.list()
+            self.badPatternList = manager.list()
+        else:
+            self.patternList = []
+            self.badPatternList = []
 
         self.handlerList = []
         self.peakHelperList = []
@@ -459,11 +467,7 @@ class SuddenChangeMerger:
                 tempHandlers.append(handler)
             return tempHandlers
 
-
     def Finalize(self, isPrint):
-        for peak in self.handlerList:
-            self.__MergeInTransactions(peak)
-            del peak
         if isPrint:
             self.Print()
 
@@ -546,19 +550,26 @@ class SuddenChangeMerger:
         #plt.close()
 
 
-    def __MergeInTransactions(self, handler):
+    def MergeInTransactions(self, handler):
         for pattern in handler.patternList:
             if pattern is not None:
                 features = pattern.GetFeatures(rules)
                 if features is not None:
-                    self.patternList.append(features)
-
+                    if IsMultiThreaded:
+                        with lock:
+                            self.patternList.append(features)
+                    else:
+                        self.patternList.append(features)
 
         for pattern in handler.badPatternList:
             if pattern is not None:
                 features = pattern.GetFeatures(rules)
                 if features is not None:
-                    self.badPatternList.append(features)
+                    if IsMultiThreaded:
+                        with lock:
+                            self.badPatternList.append(features)
+                    else:
+                        self.badPatternList.append(features)
 
 class SuddenChangeManager:
 
@@ -624,7 +635,12 @@ class SuddenChangeManager:
         file = open(fileName, "r")
         #print("Reading file: ", fileName)
         jsonDictionary = json.load(file)
-        return self.suddenChangeMergerList[0].AddFile(jsonDictionary, fileName)
+        index = 1 if self.isTest else 0
+        handlerList = self.suddenChangeMergerList[index].AddFile(jsonDictionary, fileName)
+        for peak in handlerList:
+            self.suddenChangeMergerList[index].MergeInTransactions(peak)
+            del peak
+        return
 
     def GetAllFiles(self, path):
         jumpDataFolderPath = os.path.abspath(os.getcwd()) + path
@@ -641,18 +657,12 @@ class SuddenChangeManager:
 
         if IsMultiThreaded:
             lock = multiprocessing.Lock()
-            pool_obj = multiprocessing.Pool(initializer=init_pool_processes, initargs=(lock,), processes=8,maxtasksperchild=100)
-            for handlerList in pool_obj.map(self.ReadFile, allFiles):
-                if self.isTest:
-                    self.suddenChangeMergerList[1].handlerList.extend(handlerList)
-                else:
-                    self.suddenChangeMergerList[0].handlerList.extend(handlerList)
+            pool_obj = multiprocessing.Pool(initializer=init_pool_processes, initargs=(lock,), processes=16,maxtasksperchild=250)
+            pool_obj.map(self.ReadFile, allFiles)
         else:
             for fileName in allFiles:
-                if self.isTest:
-                    self.suddenChangeMergerList[1].handlerList.extend(self.ReadFile(fileName))
-                else:
-                    self.suddenChangeMergerList[0].handlerList.extend(self.ReadFile(fileName))
+                self.ReadFile(fileName)
+
 
 
 
