@@ -14,7 +14,6 @@ import AdjustParameters as AP
 import sys
 import multiprocessing
 import Peaks
-from memory_profiler import profile
 
 import time
 
