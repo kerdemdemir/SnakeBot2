@@ -307,20 +307,16 @@ class SuddenChangeHandler:
         for x in range(actualEndIndex, len(jsonIn)):
             restPowerSum += float(jsonIn[x]["q"]) * float(jsonIn[x]["p"])
         lastTimeInSeconds = int(jsonIn[-1]["T"]) // 1000
-        timeDiffInSeconds = (lastTimeInSeconds - curTimeInMiliSecs//1000 )
-        actualAvarageVolume = (self.averageVolume * 60 * 60 * 6 - restPowerSum) / (60 * 60 * 6 - timeDiffInSeconds)
+        timeDiffInSeconds = (lastTimeInSeconds - curTimeInMiliSecs//1000)
+        actualAvarageVolume = (self.averageVolume * 60 * 60 * 6 - restPowerSum)/(60 * 60 * 6 - timeDiffInSeconds)
 
-        #if AP.IsTraningUpPeaks :
-        #    if AP.IsWorkingLowVolumes and actualAvarageVolume > 0.0003:
-        #        return
-        #    if not AP.IsWorkingLowVolumes and actualAvarageVolume < 0.0003:
-        #        return
 
         isUpOrDownTrend = pattern.SetPeaks(lastPrice, curTimeInMiliSecs//1000, self.candleDataList, self.dataList)
-        #if AP.IsTraningUpPeaks and isUpOrDownTrend == Peaks.PriceTrendSide.DOWN:
-        #    return
-        #if not AP.IsTraningUpPeaks and isUpOrDownTrend == Peaks.PriceTrendSide.UP:
-        #    return
+        if AP.IsTraningUpPeaks and isUpOrDownTrend == Peaks.PriceTrendSide.DOWN:
+            return
+        if not AP.IsTraningUpPeaks and isUpOrDownTrend == Peaks.PriceTrendSide.UP:
+            return
+
         if len(pattern.timeList) < 5:
             return
         pattern.firstToLastRatio = self.dataList[0].firstPrice / lastPrice
@@ -342,6 +338,13 @@ class SuddenChangeHandler:
         pattern.Append( dataRange, actualAvarageVolume, self.jumpTimeInSeconds, self.jumpPrice, self.marketState)
         if pattern.marketStateList[1] > 3:
             return
+
+        if AP.IsTraningUpPeaks:
+            if pattern.timeList[-1] > 5:
+                return
+        else:
+            if pattern.netPriceList[0] > 1.03:
+                return
         k = 0
         rules.strikeCount = 0
         for i in range(len(pattern.transactionBuyList)):
@@ -384,7 +387,7 @@ class SuddenChangeHandler:
             return
         if rules.ControlClamp(AP.AdjustableParameter.PeakTime2, pattern.timeList[-3]):
             return
-        if rules.ControlClamp(AP.AdjustableParameter.PeakTime3, pattern.timeList[-4]):
+        if rules.ControlClamp(AP.AdjustableParameter.PeakLast0, pattern.peaks[-1]):
             return
 
         #if rules.ControlClamp(AP.AdjustableParameter.MarketState, pattern.marketStateList[1]):
@@ -410,22 +413,22 @@ class SuddenChangeHandler:
                 timeDiff = self.dataList[i].endTimeInSecs - self.dataList[curIndex].endTimeInSecs
                 if timeDiff > 300:
                     return -1
-                if ratio<0.98:
+                if ratio<0.99:
                     return -1
+                if ratio<0.96:
+                    return 2
                 if ratio>1.10:
                     pattern.GoalReached(timeDiff, 1.10)
                     return 1
             return -1
         else:
-            if self.isAfterBuyRecord:
-                return 2
             for i in range(curIndex, len(self.dataList)):
                 if self.dataList[i].lastPrice/priceIn<0.985:
                     timeDiff = self.dataList[i].endTimeInSecs - self.dataList[curIndex].endTimeInSecs
                     pattern.GoalReached(timeDiff, 1.025)
                     return 2
-                if self.dataList[i].lastPrice/priceIn>1.04:
-                    return -1
+                if self.dataList[i].lastPrice/priceIn>1.1:
+                    return 1
             return 2
 
         return -1
@@ -641,22 +644,24 @@ class SuddenChangeManager:
             del peak
         return
 
-    def GetAllFiles(self, path):
+    def GetAllFiles(self, path, isSort):
         jumpDataFolderPath = os.path.abspath(os.getcwd()) + path
         onlyJumpFiles = [join(jumpDataFolderPath, f) for f in listdir(jumpDataFolderPath) if
                          isfile(join(jumpDataFolderPath, f))]
+        if isSort:
+            onlyJumpFiles.sort(key=lambda f: os.path.getsize(f), reverse=True)
         return onlyJumpFiles
 
     def FeedChangeMergers(self):
-        allJumpFiles = self.GetAllFiles("/Data/JumpData/")
+        allJumpFiles = self.GetAllFiles("/Data/JumpData/", True)
         if self.isTest or (AP.IsTraining and not AP.IsMachineLearning):
-            allJumpFiles = self.GetAllFiles("/Data/TestData/")
-        allExtraFiles = self.GetAllFiles("/Data/ExtraData/")
+            allJumpFiles = self.GetAllFiles("/Data/TestData/", False)
+        allExtraFiles = self.GetAllFiles("/Data/ExtraData/", False)
         allFiles = allJumpFiles + allExtraFiles
 
         if IsMultiThreaded:
             lock = multiprocessing.Lock()
-            pool_obj = multiprocessing.Pool(initializer=init_pool_processes, initargs=(lock,), processes=16,maxtasksperchild=250)
+            pool_obj = multiprocessing.Pool(initializer=init_pool_processes, initargs=(lock,), processes=32,maxtasksperchild=500)
             pool_obj.map(self.ReadFile, allFiles)
         else:
             for fileName in allFiles:

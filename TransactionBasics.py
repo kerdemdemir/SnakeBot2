@@ -333,14 +333,13 @@ class TransactionPattern:
         returnList.append(self.timeList[-3])
         ruleList.SetIndex(AP.AdjustableParameter.PeakTime2, index)
         index += 1
-        returnList.append( self.timeList[-4] if len(self.timeList) > 3 else self.timeList[-2])
-        ruleList.SetIndex(AP.AdjustableParameter.PeakTime3, index)
-
-        returnList.append(self.peaks[-5])
-        returnList.append(self.peaks[-4])
-        returnList.append(self.peaks[-3])
-        returnList.append(self.peaks[-2])
         returnList.append(self.peaks[-1])
+        ruleList.SetIndex(AP.AdjustableParameter.PeakLast0, index)
+
+        returnList.append(self.peaks[-2])
+        returnList.append(self.peaks[-3])
+        returnList.append(self.peaks[-4])
+        returnList.append(self.peaks[-5])
         return returnList
 
     def __repr__(self):
