@@ -275,12 +275,6 @@ class SuddenChangeHandler:
         if curPattern.totalBuy + curPattern.totalSell < powerLimit:
             return
 
-        if curPattern.lastBuyLongWall != 0.0 or curPattern.lastSellLongWall != 0.0:
-            if curPattern.lastBuyWall > 1.35 or curPattern.lastBuyWall< 0.05 or \
-               curPattern.lastSellWall > 1.0 or curPattern.lastSellWall < 0.03 or \
-               curPattern.lastBuyLongWall > 3.25 or curPattern.lastBuyLongWall < 0.25 or \
-               curPattern.lastSellLongWall > 2.5 or curPattern.lastSellLongWall < 0.05:
-                return
 
         pattern = TransactionBasics.TransactionPattern()
         lastPrice = curPattern.lastPrice
@@ -317,6 +311,22 @@ class SuddenChangeHandler:
         if not AP.IsTraningUpPeaks and isUpOrDownTrend == Peaks.PriceTrendSide.UP:
             return
 
+        if isUpOrDownTrend == Peaks.PriceTrendSide.UP:
+            if curPattern.lastBuyLongWall != 0.0 or curPattern.lastSellLongWall != 0.0:
+                if curPattern.lastBuyWall > 1.05 or curPattern.lastBuyWall< 0.05 or \
+                   curPattern.lastSellWall > 1.0 or curPattern.lastSellWall < 0.03 or \
+                   curPattern.lastBuyLongWall > 3.25 or curPattern.lastBuyLongWall < 0.3 or \
+                   curPattern.lastSellLongWall > 2.5 or curPattern.lastSellLongWall < 0.07:
+                    return
+                
+        if isUpOrDownTrend == Peaks.PriceTrendSide.DOWN:
+            if curPattern.lastBuyLongWall != 0.0 or curPattern.lastSellLongWall != 0.0:
+                if curPattern.lastBuyWall > 1.25 or curPattern.lastBuyWall < 0.008 or \
+                        curPattern.lastSellWall > 0.75 or curPattern.lastSellWall < 0.0005 or \
+                        curPattern.lastBuyLongWall > 3.25 or curPattern.lastBuyLongWall < 0.06 or \
+                        curPattern.lastSellLongWall > 2.3 or curPattern.lastSellLongWall < 0.14:
+                    return
+
         if len(pattern.timeList) < 5:
             return
         pattern.firstToLastRatio = self.dataList[0].firstPrice / lastPrice
@@ -340,10 +350,7 @@ class SuddenChangeHandler:
             return
 
         if AP.IsTraningUpPeaks:
-            if pattern.timeList[-1] > 5:
-                return
-        else:
-            if pattern.netPriceList[0] > 1.03:
+            if pattern.timeList[-1] > 0:
                 return
         k = 0
         rules.strikeCount = 0
