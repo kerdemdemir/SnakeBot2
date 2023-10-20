@@ -71,7 +71,7 @@ def Predict( messageChangeTimeTransactionStrList):
     for key in parameterHeaders:
         parameterList.append(dictionaryParams[key])
 
-    totalFeatures = parameterList + resultsChangeFloat[-5:]
+    totalFeatures = parameterList #+ resultsChangeFloat[-5:]
 
     totalFeaturesNumpy = np.array(totalFeatures).reshape(1, -1)
     totalFeaturesScaled = inputTransform.transform(totalFeaturesNumpy)
