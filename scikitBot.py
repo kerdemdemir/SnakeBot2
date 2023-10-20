@@ -30,6 +30,7 @@ testRatio = 4
 transParamList = [TransactionBasics.TransactionParam(10000, 3)]
 isUseTest = True
 transactionScaler = None
+inputTransform = None
 mlpTransaction = None
 IsPCA = False
 IsKMeans = True
@@ -73,7 +74,7 @@ def Predict( messageChangeTimeTransactionStrList):
     totalFeatures = parameterList + resultsChangeFloat[-5:]
 
     totalFeaturesNumpy = np.array(totalFeatures).reshape(1, -1)
-    totalFeaturesScaled = transactionScaler.transform(totalFeaturesNumpy)
+    totalFeaturesScaled = inputTransform.transform(totalFeaturesNumpy)
     print("I will predict: ", totalFeatures, " scaled: ", totalFeaturesScaled)
     npTotalFeatures = np.array(totalFeaturesScaled)
     npTotalFeatures = npTotalFeatures.reshape(1, -1)
@@ -84,7 +85,7 @@ def Learn():
     global suddenChangeManager
     global transactionScaler
     global mlpTransaction
-
+    global inputTransform
 
     if IsDecisionTree:
         mlpTransaction = DecisionTreeClassifier(max_depth=8, min_samples_split=50)
@@ -103,7 +104,7 @@ def Learn():
     y = suddenChangeManager.toTransactionResultsNumpy(False)
     #transactionScaler = preprocessing.StandardScaler().fit(numpyArr)
     X = numpyArr
-    transform = None
+    inputTransform = None
 
     if IsPCA:
         pca = PCA(n_components=15)
@@ -111,7 +112,7 @@ def Learn():
         pca_components = pca.components_
         print("PCA components:")
         explained_variance_ratio = pca.explained_variance_ratio_
-        transform = pca
+        inputTransform = pca
         for i, component in enumerate(pca_components):
             print(f"PC{i + 1}: {', '.join([f'{feature_names[j]}={component[j]:.4f}' for j in range(len(feature_names))])}")
     elif IsRandomForest:
@@ -131,7 +132,7 @@ def Learn():
         for i in indices:
             print(f"{feature_names[i]}: {importances[i]}")
         selected_names = [feature_names[i] for i in indices[:num_selected_features]]
-        transform = sfm
+        inputTransform = sfm
     elif IsKMeans:
         selector = SelectKBest(f_classif, k='all')
         X = selector.fit_transform(X, y)
@@ -165,7 +166,7 @@ def Learn():
         # Print the final selected feature names
         selected_names = [selected_names[i] for i in selected_indices]
 
-        transform = selector
+        inputTransform = selector
 
     # Print the selected feature names
     print("Selected feature names:")
@@ -175,7 +176,7 @@ def Learn():
     if isUseTest:
         numpyArrTest = suddenChangeManager.toTransactionFeaturesNumpy(True)
         #X_test = transactionScaler.transform(numpyArrTest)
-        X_test = transform.transform(numpyArrTest)
+        X_test = inputTransform.transform(numpyArrTest)
         y_test = suddenChangeManager.toTransactionResultsNumpy(True)
     del suddenChangeManager
     mlpTransaction.fit(X, y)
