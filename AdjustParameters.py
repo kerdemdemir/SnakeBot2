@@ -5,7 +5,7 @@ from datetime import datetime
 
 IsTeaching = False
 IsTraining = not IsTeaching
-IsMachineLearning = True
+IsMachineLearning = IsTraining
 IsShortTerm = False
 IsTrained = not IsTeaching
 TotalStrikeCount = 0
@@ -90,10 +90,10 @@ class AdjustableParameter(Enum):
     HourPriceRatioMin288 = "HourPriceRatioMin288"
     HourPriceRatioMax288 = "HourPriceRatioMax288"
     FirstToLastRaio = "FirstToLastRaio"
+    JumpCount10M = "JumpCount10M"
     JumpCount1H = "JumpCount1H"
-    JumpCount2H = "JumpCount2H"
-    JumpCount4H = "JumpCount4H"
-    JumpCount8H = "JumpCount8H"
+    JumpCount6H = "JumpCount6H"
+    JumpCount12H = "JumpCount12H"
     JumpCount24H = "JumpCount24H"
     JumpCount72H = "JumpCount72H"
     NetPrice1H = "NetPrice1H"
@@ -158,7 +158,7 @@ class Rule:
         self.isNonZero = "NonZero" in self.tags
         self.isTransaction = "Transaction" in self.tags
         self.isShortTerm = self.isTransaction or "NetPrice" in self.tags or "Detail" in self.tags
-        if IsTeaching and not IsTraining and not IsMachineLearning:
+        if  IsTeaching and not IsTraining and not IsMachineLearning:
             if not self.isTuned:
                 self.threshold = 100000000
                 if self.IsSmall():
@@ -303,12 +303,15 @@ class RuleList:
 
             if rule.quantileVal == rule.threshold:
                 continue
+
             curVal = rule.badCount - rule.goodCount
             #if rule.goodCount > 0.25:
             #    curVal /= (rule.goodCount/0.1)
             if curVal > bestVal and not rule.isTuned and rule.tuneCount <= 5 :
                 bestVal = curVal
                 selectedRule = rule
+
+
         selectedRule.tuneCount += 1
         self.lastSelectedRule = selectedRule
         print("Iteration done best seperator rule was", str(selectedRule.adjustableParameter), "its value is: ", selectedRule.threshold,

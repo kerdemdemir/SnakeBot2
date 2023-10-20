@@ -358,10 +358,10 @@ class SuddenChangeHandler:
             if rules.ControlClampIndex(k,pattern.transactionBuyList[i]+pattern.transactionSellList[i]):
                 return
             k+=2
-            if rules.ControlClampIndex(k, pattern.TotalPower(i)):
+            if rules.ControlClampIndex(k, pattern.transactionBuyPowerList[i]):
                 return
             k+=2
-            if rules.ControlClampIndex(k, pattern.buySellRatio[i]):
+            if rules.ControlClampIndex(k, pattern.transactionSellPowerList[i]):
                 return
             k+=2
             if rules.ControlClampIndex(k, pattern.firstLastPriceList[i]):
@@ -374,28 +374,27 @@ class SuddenChangeHandler:
         if rules.ControlClamp(AP.AdjustableParameter.AverageVolume, pattern.averageVolume):
             return
 
-        if rules.ControlClamp(AP.AdjustableParameter.JumpCount8H, pattern.jumpCountList[1]):
+        if rules.ControlClamp(AP.AdjustableParameter.JumpCount10M, pattern.jumpCountList[0]):
+           return
+        if rules.ControlClamp(AP.AdjustableParameter.JumpCount1H, pattern.jumpCountList[1]):
+           return
+        if rules.ControlClamp(AP.AdjustableParameter.JumpCount12H, pattern.jumpCountList[2]):
            return
 
         if rules.ControlClamp(AP.AdjustableParameter.NetPrice1H, pattern.netPriceList[0]):
             return
-        if rules.ControlClamp(AP.AdjustableParameter.NetPrice8H, pattern.netPriceList[1]):
-            return
-        if rules.ControlClamp(AP.AdjustableParameter.NetPrice24H, pattern.netPriceList[2]):
-            return
-        if rules.ControlClamp(AP.AdjustableParameter.NetPrice72H, pattern.netPriceList[3]):
-            return
-        if rules.ControlClamp(AP.AdjustableParameter.NetPrice168H, pattern.netPriceList[4]):
+        if rules.ControlClamp(AP.AdjustableParameter.NetPrice168H, pattern.netPriceList[2]):
             return
 
-        if rules.ControlClamp(AP.AdjustableParameter.PeakTime0, pattern.timeList[-1]):
+        if rules.ControlClamp(AP.AdjustableParameter.DownPeakRatio0, pattern.peaks[-3] / pattern.peaks[-5]):
             return
-        if rules.ControlClamp(AP.AdjustableParameter.PeakTime1, pattern.timeList[-2]):
+        if rules.ControlClamp(AP.AdjustableParameter.PeakLast1 , pattern.peaks[-3]):
             return
-        if rules.ControlClamp(AP.AdjustableParameter.PeakTime2, pattern.timeList[-3]):
+        if rules.ControlClamp(AP.AdjustableParameter.PowerRatio0, pattern.TotalPower(0) / pattern.averageVolume):
             return
-        if rules.ControlClamp(AP.AdjustableParameter.PeakLast0, pattern.peaks[-1]):
+        if rules.ControlClamp(AP.AdjustableParameter.PowerRatio1, pattern.TotalPower(1) / pattern.averageVolume):
             return
+
 
         #if rules.ControlClamp(AP.AdjustableParameter.MarketState, pattern.marketStateList[1]):
         #    return
@@ -424,17 +423,19 @@ class SuddenChangeHandler:
                     return -1
                 if ratio<0.96:
                     return 2
-                if ratio>1.10:
-                    pattern.GoalReached(timeDiff, 1.10)
+                if ratio>1.08:
+                    pattern.GoalReached(timeDiff, 1.08)
                     return 1
             return -1
         else:
             for i in range(curIndex, len(self.dataList)):
-                if self.dataList[i].lastPrice/priceIn<0.985:
-                    timeDiff = self.dataList[i].endTimeInSecs - self.dataList[curIndex].endTimeInSecs
+                timeDiff = self.dataList[i].endTimeInSecs - self.dataList[curIndex].endTimeInSecs
+                if self.dataList[i].lastPrice/priceIn<0.99:
                     pattern.GoalReached(timeDiff, 1.025)
                     return 2
-                if self.dataList[i].lastPrice/priceIn>1.1:
+                if timeDiff > 300:
+                    return -1
+                if self.dataList[i].lastPrice/priceIn>1.08:
                     return 1
             return 2
 
@@ -664,8 +665,9 @@ class SuddenChangeManager:
         if self.isTest or (AP.IsTraining and not AP.IsMachineLearning):
             allJumpFiles = self.GetAllFiles("/Data/TestData/", False)
         allExtraFiles = self.GetAllFiles("/Data/ExtraData/", False)
-        allFiles = allJumpFiles + allExtraFiles
-
+        allFiles = allJumpFiles
+        if not self.isTest:
+            allFiles = allJumpFiles + allExtraFiles
         if IsMultiThreaded:
             lock = multiprocessing.Lock()
             pool_obj = multiprocessing.Pool(initializer=init_pool_processes, initargs=(lock,), processes=32,maxtasksperchild=500)

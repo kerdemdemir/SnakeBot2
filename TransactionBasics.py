@@ -197,11 +197,12 @@ class TransactionPattern:
     def __init__(self):
         self.transactionBuyList = []
         self.transactionSellList = []
-        self.transactionBuyPowerList = []
+        self.   transactionBuyPowerList = []
         self.transactionSellPowerList = []
         self.firstLastPriceList = []
         self.buySellRatio = []
         self.jumpCountList = []
+        self.jumpCountList2 = []
         self.netPriceList = []
         self.firstToLastRatio = 1.0
         self.lastPrice = 0.0
@@ -236,11 +237,11 @@ class TransactionPattern:
 
     def SetPeaks(self, curPrice, curTime, candleSticks, dataList ):
         peakListAndTimeList = candleSticks.GetPeaks(curPrice, curTime, dataList)
-        self.netPriceList = [curPrice / candleSticks.GetPrice(curTime, 60*60), curPrice / candleSticks.GetPrice(curTime, 60*60*8),
-                             curPrice / candleSticks.GetPrice(curTime, 60*60*24), curPrice / candleSticks.GetPrice(curTime, 60*60*72),
+        self.netPriceList = [curPrice / candleSticks.GetPrice(curTime, 60*60),
+                             curPrice / candleSticks.GetPrice(curTime, 60*60*24),
                              curPrice / candleSticks.GetPrice(curTime, 60*60*24*10)]
 
-        self.jumpCountList = [candleSticks.CountPeaks(curTime, 60*60), candleSticks.CountPeaks(curTime, 60*60*6)]
+        self.jumpCountList = [candleSticks.CountPeaks(curTime, 60*10), candleSticks.CountPeaks(curTime, 60*60), candleSticks.CountPeaks(curTime, 60*60*12)]
         self.peaks = peakListAndTimeList[0][-10:]
         self.timeList = peakListAndTimeList[1][-10:]
         self.priceList = peakListAndTimeList[2][-10:]
@@ -291,8 +292,8 @@ class TransactionPattern:
 
         for i in range(len(self.transactionBuyList)):
             returnList.append(self.transactionBuyList[i]+self.transactionSellList[i])
-            returnList.append(self.TotalPower(i))
-            returnList.append(self.buySellRatio[i])
+            returnList.append(self.transactionBuyPowerList[i])
+            returnList.append(self.transactionSellPowerList[i])
             returnList.append(self.firstLastPriceList[i])
 
         index = len(self.transactionBuyList)*4
@@ -305,41 +306,35 @@ class TransactionPattern:
         ruleList.SetIndex(AP.AdjustableParameter.AverageVolume, index)
         index += 1
 
+        returnList.append(self.jumpCountList[0])
+        ruleList.SetIndex(AP.AdjustableParameter.JumpCount10M, index)
+        index += 1
         returnList.append(self.jumpCountList[1])
-        ruleList.SetIndex(AP.AdjustableParameter.JumpCount8H, index)
+        ruleList.SetIndex(AP.AdjustableParameter.JumpCount1H, index)
+        index += 1
+        returnList.append(self.jumpCountList[2])
+        ruleList.SetIndex(AP.AdjustableParameter.JumpCount12H, index)
         index += 1
         returnList.append(self.netPriceList[0])
         ruleList.SetIndex(AP.AdjustableParameter.NetPrice1H, index)
         index += 1
-        returnList.append(self.netPriceList[1])
-        ruleList.SetIndex(AP.AdjustableParameter.NetPrice8H, index)
-        index += 1
         returnList.append(self.netPriceList[2])
-        ruleList.SetIndex(AP.AdjustableParameter.NetPrice24H, index)
-        index += 1
-        returnList.append(self.netPriceList[3])
-        ruleList.SetIndex(AP.AdjustableParameter.NetPrice72H, index)
-        index += 1
-        returnList.append(self.netPriceList[4])
         ruleList.SetIndex(AP.AdjustableParameter.NetPrice168H, index)
+        index += 1
 
-        index += 1
-        returnList.append(self.timeList[-1])
-        ruleList.SetIndex(AP.AdjustableParameter.PeakTime0, index)
-        index += 1
-        returnList.append(self.timeList[-2])
-        ruleList.SetIndex(AP.AdjustableParameter.PeakTime1, index)
-        index += 1
-        returnList.append(self.timeList[-3])
-        ruleList.SetIndex(AP.AdjustableParameter.PeakTime2, index)
-        index += 1
-        returnList.append(self.peaks[-1])
-        ruleList.SetIndex(AP.AdjustableParameter.PeakLast0, index)
 
-        returnList.append(self.peaks[-2])
+        returnList.append(self.peaks[-3] / self.peaks[-5])
+        ruleList.SetIndex(AP.AdjustableParameter.DownPeakRatio0, index)
+        index += 1
         returnList.append(self.peaks[-3])
-        returnList.append(self.peaks[-4])
-        returnList.append(self.peaks[-5])
+        ruleList.SetIndex(AP.AdjustableParameter.PeakLast1, index)
+        index += 1
+        returnList.append(self.TotalPower(0) / self.averageVolume)
+        ruleList.SetIndex(AP.AdjustableParameter.PowerRatio0, index)
+        index += 1
+        returnList.append(self.TotalPower(1) / self.averageVolume)
+        ruleList.SetIndex(AP.AdjustableParameter.PowerRatio1, index)
+        index += 1
         return returnList
 
     def __repr__(self):
