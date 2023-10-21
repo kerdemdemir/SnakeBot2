@@ -44,7 +44,7 @@
         },
         {
             "ruleName": "Price0",
-            "threshold": 1.0346879361204353,
+            "threshold": 1.0466162790697675,
             "checkType": ">",
             "tags": "Transaction"
         },
@@ -56,7 +56,7 @@
         },
         {
             "ruleName": "TotalCount1",
-            "threshold": 17.285061666666667,
+            "threshold": 20.310364166666666,
             "checkType": ">",
             "tags": "Transaction"
         },
@@ -92,7 +92,7 @@
         },
         {
             "ruleName": "Price1",
-            "threshold": 1.0466517095463779,
+            "threshold": 1.739510426540284,
             "checkType": ">",
             "tags": "Transaction"
         },
@@ -140,7 +140,7 @@
         },
         {
             "ruleName": "Price2",
-            "threshold": 1.1779648985959439,
+            "threshold": 1.2182426174496643,
             "checkType": ">",
             "tags": "Transaction"
         },
@@ -236,7 +236,7 @@
         },
         {
             "ruleName": "DownPeakRatio0",
-            "threshold": 1.6709417253521126,
+            "threshold": 3.6150983157894734,
             "checkType": ">",
             "tags": "NetPrice"
         },
@@ -248,7 +248,7 @@
         },
         {
             "ruleName": "UpPeakRatio0",
-            "threshold": 1.0727954408602152,
+            "threshold": 1.072777093206951,
             "checkType": ">",
             "tags": ""
         },
@@ -260,7 +260,7 @@
         },
         {
             "ruleName": "PowerRatio0",
-            "threshold": 34.17305911194871,
+            "threshold": 37.41392743249885,
             "checkType": ">",
             "tags": ""
         },
@@ -278,7 +278,7 @@
         },
         {
             "ruleName": "DownPeakRatio1",
-            "threshold": 0.43281611374407586,
+            "threshold": 0.33470930232558144,
             "checkType": "<",
             "tags": "NetPrice"
         },
@@ -302,7 +302,7 @@
         },
         {
             "ruleName": "PeakLast0",
-            "threshold": 0.973146822742475,
+            "threshold": 0.954725826028321,
             "checkType": "<",
             "tags": "NetPrice"
         },
@@ -320,13 +320,13 @@
         },
         {
             "ruleName": "PeakLast1",
-            "threshold": 150.97928374655643,
+            "threshold": 279.1858105263157,
             "checkType": ">",
             "tags": "NetPrice"
         },
         {
             "ruleName": "PeakLast2",
-            "threshold": -159.14000000000001,
+            "threshold": -358.7727157894737,
             "checkType": "<",
             "tags": ""
         },
