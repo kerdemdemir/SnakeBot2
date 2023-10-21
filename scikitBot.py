@@ -61,7 +61,8 @@ parameterHeaders = ["TotalCount0", "TotalBuyPower0", "TotalSellPower0", "Price0"
                     "TotalCount1","TotalBuyPower1","TotalSellPower1","Price1",
                     "TotalCount2", "TotalBuyPower2", "TotalSellPower2", "Price2",
                     "MaxPowInDetail", "AverageVolume", "JumpCount10M", "JumpCount1H", "JumpCount12H",
-                    "NetPrice1H", "NetPrice168H", "DownPeakRatio0", "PeakLast1", "PowerRatio0", "PowerRatio1"]
+                    "NetPrice1H", "NetPrice168H", "DownPeakRatio0", "UpPeakRatio0", "PowerRatio0", "PowerRatio1",
+                    "DownPeakRatio1", "UpPeakRatio1", "PeakLast0", "PeakLast1", "PeakLast2"]
 
 def Predict( messageChangeTimeTransactionStrList):
 
@@ -110,6 +111,14 @@ def Learn():
     #                    "MaxPowInDetail", "AverageVolume", "JumpCount10M", "JumpCount1H", "JumpCount12H",
     #                    "NetPrice1H", "NetPrice168H", "DownPeakRatio0", "PowerRatio0", "PowerRatio1"]
     # Get the selected feature indices and names
+    #returnList.append(self.longPeaks[-5] / self.longPeaks[-3])
+    #returnList.append(self.longPeaks[-4] / self.longPeaks[-2])
+    #returnList.append(self.longPeaks[-1] / self.longPeaks[-2])
+    #returnList.append(self.longPeaks[-0])
+    #returnList.append(self.longPeaks[-1])
+    #returnList.append(self.longPeaks[-2])
+    #returnList.append(self.longPeaks[-3])
+
     feature_names = parameterHeaders
     numpyArr = suddenChangeManager.toTransactionFeaturesNumpy(False)
     y = suddenChangeManager.toTransactionResultsNumpy(False)

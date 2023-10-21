@@ -180,10 +180,13 @@ class CandleDataList:
     def __init__(self):
         self.candleStickDataList = []
         self.peaks = PeakList(0.03)
+        self.longPeaks = PeakList(0.1)
 
     def feed(self, jsonIn):
         self.peaks = PeakList(0.03)
+        self.longPeaks = PeakList(0.1)
         self.feedPeaks(jsonIn, self.peaks)
+        self.feedPeaks(jsonIn, self.longPeaks)
     def feedPeaks(self, jsonIn, peakList):
         self.candleStickDataList = []
         for candleStick in jsonIn:
@@ -235,7 +238,7 @@ class CandleDataList:
 
             if candleData.endTimeSec > lastTime:
                 break
-            peak.UpdateAndSetThePeak(candleData.closePrice, candleData.endTimeSec, self.peaks.peakSize)
+            peak.UpdateAndSetThePeak(candleData.closePrice, candleData.endTimeSec, peakSize)
 
     def GetStartPeak(self, curPrice, curTime, dividedTimeList, peakList):
         startStream = peakList.curStream
@@ -253,8 +256,9 @@ class CandleDataList:
                 break
         return startStream
 
-    def GetPeaks(self, curPrice, curTime, dividedTimeList ):
-        startStream = self.GetStartPeak(curPrice, curTime, dividedTimeList, self.peaks)
+    def GetPeaks(self, curPrice, curTime, dividedTimeList, isLong ):
+        peaks = self.longPeaks if isLong else self.peaks
+        startStream = self.GetStartPeak(curPrice, curTime, dividedTimeList, peaks)
 
         curEndTime = startStream.GetEndTime()
         curLastPrice = startStream.GetLastPrice()
@@ -270,7 +274,7 @@ class CandleDataList:
         timeList.append(startStream.GetTimeDiff())
         newPriceList.append(curLastPrice)
 
-        for peak in reversed(self.peaks.peakDataList):
+        for peak in reversed(peaks.peakDataList):
             if peak.IsTimeAfter(startStream.GetStartTime()+1):
                 changeList.append(peak.GetChange())
                 timeList.append(peak.GetTimeDiff())

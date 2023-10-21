@@ -386,15 +386,25 @@ class SuddenChangeHandler:
         if rules.ControlClamp(AP.AdjustableParameter.NetPrice168H, pattern.netPriceList[2]):
             return
 
-        if rules.ControlClamp(AP.AdjustableParameter.DownPeakRatio0, pattern.peaks[-3] / pattern.peaks[-5]):
+        if rules.ControlClamp(AP.AdjustableParameter.DownPeakRatio0, pattern.priceList[-3] / pattern.priceList[-5]):
             return
-        if rules.ControlClamp(AP.AdjustableParameter.PeakLast1 , pattern.peaks[-3]):
+        if rules.ControlClamp(AP.AdjustableParameter.UpPeakRatio0 , pattern.priceList[-2] / pattern.priceList[-4]):
             return
         if rules.ControlClamp(AP.AdjustableParameter.PowerRatio0, pattern.TotalPower(0) / pattern.averageVolume):
             return
         if rules.ControlClamp(AP.AdjustableParameter.PowerRatio1, pattern.TotalPower(1) / pattern.averageVolume):
             return
 
+        if rules.ControlClamp(AP.AdjustableParameter.DownPeakRatio1, pattern.longPrices[-3] / pattern.longPrices[-5]):
+            return
+        if rules.ControlClamp(AP.AdjustableParameter.UpPeakRatio1 , pattern.longPrices[-2] / pattern.longPrices[-4]):
+            return
+        if rules.ControlClamp(AP.AdjustableParameter.PeakLast0, pattern.longPeaks[-1]):
+            return
+        if rules.ControlClamp(AP.AdjustableParameter.PeakLast1, pattern.longPeaks[-2]):
+            return
+        if rules.ControlClamp(AP.AdjustableParameter.PeakLast2, pattern.longPeaks[-3]):
+            return
 
         #if rules.ControlClamp(AP.AdjustableParameter.MarketState, pattern.marketStateList[1]):
         #    return

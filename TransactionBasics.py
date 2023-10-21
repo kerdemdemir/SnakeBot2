@@ -220,6 +220,8 @@ class TransactionPattern:
         self.priceList = []
         self.timeToJump = 0
 
+        self.longPeaks = []
+        self.longPrices = []
         self.buyWall = 0.0
         self.sellWall = 0.0
         self.buyLongWall = 0.0
@@ -236,7 +238,8 @@ class TransactionPattern:
 
 
     def SetPeaks(self, curPrice, curTime, candleSticks, dataList ):
-        peakListAndTimeList = candleSticks.GetPeaks(curPrice, curTime, dataList)
+        peakListAndTimeList = candleSticks.GetPeaks(curPrice, curTime, dataList, False)
+        longPeakListAndTimeList = candleSticks.GetPeaks(curPrice, curTime, dataList, True)
         self.netPriceList = [curPrice / candleSticks.GetPrice(curTime, 60*60),
                              curPrice / candleSticks.GetPrice(curTime, 60*60*24),
                              curPrice / candleSticks.GetPrice(curTime, 60*60*24*10)]
@@ -245,6 +248,12 @@ class TransactionPattern:
         self.peaks = peakListAndTimeList[0][-10:]
         self.timeList = peakListAndTimeList[1][-10:]
         self.priceList = peakListAndTimeList[2][-10:]
+
+        self.longPeaks = longPeakListAndTimeList[0][-10:]
+        self.longPrices = longPeakListAndTimeList[2][-10:]
+        if len(self.longPeaks) < 5:
+            self.timeList = self.timeList[:3]
+
         return peakListAndTimeList[4]
 
     def Append(self, dataList, averageVolume, peakTime, jumpPrice, marketState):
@@ -323,11 +332,11 @@ class TransactionPattern:
         index += 1
 
 
-        returnList.append(self.peaks[-3] / self.peaks[-5])
+        returnList.append(self.priceList[-3] / self.priceList[-5])
         ruleList.SetIndex(AP.AdjustableParameter.DownPeakRatio0, index)
         index += 1
-        returnList.append(self.peaks[-3])
-        ruleList.SetIndex(AP.AdjustableParameter.PeakLast1, index)
+        returnList.append(self.priceList[-2] / self.priceList[-4])
+        ruleList.SetIndex(AP.AdjustableParameter.UpPeakRatio0, index)
         index += 1
         returnList.append(self.TotalPower(0) / self.averageVolume)
         ruleList.SetIndex(AP.AdjustableParameter.PowerRatio0, index)
@@ -335,6 +344,22 @@ class TransactionPattern:
         returnList.append(self.TotalPower(1) / self.averageVolume)
         ruleList.SetIndex(AP.AdjustableParameter.PowerRatio1, index)
         index += 1
+        returnList.append(self.longPrices[-3] / self.longPrices[-5])
+        ruleList.SetIndex(AP.AdjustableParameter.DownPeakRatio1, index)
+        index += 1
+        returnList.append(self.longPrices[-2] / self.longPrices[-4])
+        ruleList.SetIndex(AP.AdjustableParameter.UpPeakRatio1, index)
+        index += 1
+        returnList.append(self.longPeaks[-1])
+        ruleList.SetIndex(AP.AdjustableParameter.PeakLast0, index)
+        index += 1
+        returnList.append(self.longPeaks[-2])
+        ruleList.SetIndex(AP.AdjustableParameter.PeakLast1, index)
+        index += 1
+        returnList.append(self.longPeaks[-3])
+        ruleList.SetIndex(AP.AdjustableParameter.PeakLast2, index)
+        index += 1
+
         return returnList
 
     def __repr__(self):
