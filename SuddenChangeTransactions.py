@@ -414,16 +414,17 @@ class SuddenChangeHandler:
 
     def __GetCategory(self, curIndex, priceIn, pattern):
         if self.isRise:
+            isDropped = False
             for i in range(curIndex+1, len(self.dataList)):
                 ratio = self.dataList[i].lastPrice / priceIn
                 timeDiff = self.dataList[i].endTimeInSecs - self.dataList[curIndex].endTimeInSecs
                 if timeDiff > 300:
                     return -1
                 if ratio<0.99:
-                    return -1
-                if ratio<0.96:
+                    isDropped = True
+                if ratio<0.97:
                     return 2
-                if ratio>1.08:
+                if ratio>1.08 and not isDropped:
                     pattern.GoalReached(timeDiff, 1.08)
                     return 1
             return -1

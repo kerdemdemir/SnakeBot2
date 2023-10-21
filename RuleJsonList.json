@@ -32,7 +32,7 @@
         },
         {
             "ruleName": "TotalSellPower0",
-            "threshold": 0.0645021427151477,
+            "threshold": 0.06431027744720617,
             "checkType": ">",
             "tags": "Transaction"
         },
@@ -44,7 +44,7 @@
         },
         {
             "ruleName": "Price0",
-            "threshold": 1.9035994318181817,
+            "threshold": 1.0481484407172263,
             "checkType": ">",
             "tags": "Transaction"
         },
@@ -80,7 +80,7 @@
         },
         {
             "ruleName": "TotalSellPower1",
-            "threshold": 0.09184575440707494,
+            "threshold": 0.08494504040467497,
             "checkType": ">",
             "tags": "Transaction"
         },
@@ -134,7 +134,7 @@
         },
         {
             "ruleName": "Price2",
-            "threshold": 0.9334440314822913,
+            "threshold": 0.9646046931407942,
             "checkType": "<",
             "tags": "Transaction"
         },
@@ -146,7 +146,7 @@
         },
         {
             "ruleName": "MaxPowInDetail",
-            "threshold": 0.0040329266669999995,
+            "threshold": 0.004033079651699999,
             "checkType": "<",
             "tags": "Detail"
         },
@@ -260,7 +260,7 @@
         },
         {
             "ruleName": "PowerRatio0",
-            "threshold": 37.815397386440445,
+            "threshold": 37.32935306791036,
             "checkType": ">",
             "tags": ""
         },

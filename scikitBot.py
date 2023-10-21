@@ -10,11 +10,14 @@ from sklearn.neural_network import MLPClassifier
 
 from sklearn.metrics import confusion_matrix
 from sklearn.ensemble import RandomForestClassifier
+from sklearn import preprocessing
+from sklearn.model_selection import GridSearchCV
 
 from sklearn.decomposition import PCA
 from sklearn.feature_selection import SelectKBest, f_classif
 from sklearn.feature_selection import SelectFromModel
 from sklearn.tree import DecisionTreeClassifier, export_graphviz
+from sklearn.metrics import f1_score, make_scorer
 
 import SuddenChangeTransactions
 import TransactionBasics
@@ -28,7 +31,7 @@ isUseExtraData = False
 acceptedProbibilty = 0.7
 testRatio = 4
 transParamList = [TransactionBasics.TransactionParam(10000, 3)]
-isUseTest = False
+isUseTest = True
 transactionScaler = None
 inputTransform = None
 mlpTransaction = None
@@ -40,12 +43,17 @@ IsDecisionTree = True
 
 
 currentProbs = []
-parameter_space = {
-    'hidden_layer_sizes': [ (36,36,36),(36,36,36,36,36),(36,36,36,36),(48,48,48),(48,48,48,48) ],
-    'solver': ['sgd', 'adam'],
-    'alpha': [0.0001, 0.001, 0.01],
-}
-
+if not IsDecisionTree:
+    parameter_space = {
+        'hidden_layer_sizes': [ (24,24, 24),(36,36,36),(24, 24, 24, 24),(24,24),(36,36) ],
+        'solver': ['sgd', 'adam'],
+        'alpha': [0.0001, 0.001, 0.01],
+    }
+else:
+    parameter_space = {
+        'max_depth': [ 4, 6, 8, 10],
+        'min_samples_split': [10, 20, 40, 80, 150]
+    }
 suddenChangeManager = SuddenChangeTransactions.SuddenChangeManager(transParamList)
 
 
@@ -86,12 +94,15 @@ def Learn():
     global transactionScaler
     global mlpTransaction
     global inputTransform
+    inputTransform = None
 
     if IsDecisionTree:
-        mlpTransaction = DecisionTreeClassifier(max_depth=8, min_samples_split=50)
+        mlpTransaction = DecisionTreeClassifier()
     else:
         mlpTransaction = MLPClassifier(hidden_layer_sizes=(24, 24, 24), activation='relu',
-                                      solver='adam', learning_rate='adaptive', alpha=0.01, max_iter=500)
+                                      solver='adam', learning_rate='adaptive', alpha=0.001, max_iter=500)
+    scoring = make_scorer(f1_score, pos_label=1)
+    mlpTransaction = GridSearchCV(mlpTransaction, param_grid=parameter_space, cv=5, scoring=scoring)
 
     #parameterHeaders = ["TotalCount0", "TotalBuyPower0", "TotalSellPower0", "Price0",
     #                    "TotalCount1", "TotalBuyPower1", "TotalSellPower1", "Price1",
@@ -102,9 +113,11 @@ def Learn():
     feature_names = parameterHeaders
     numpyArr = suddenChangeManager.toTransactionFeaturesNumpy(False)
     y = suddenChangeManager.toTransactionResultsNumpy(False)
-    #transactionScaler = preprocessing.StandardScaler().fit(numpyArr)
     X = numpyArr
-    inputTransform = None
+    if not IsDecisionTree:
+        inputTransform = preprocessing.StandardScaler().fit(numpyArr)
+        X = inputTransform.transform(X)
+
 
     if IsPCA:
         pca = PCA(n_components=15)
@@ -179,7 +192,10 @@ def Learn():
         X_test = inputTransform.transform(numpyArrTest)
         y_test = suddenChangeManager.toTransactionResultsNumpy(True)
     del suddenChangeManager
+
     mlpTransaction.fit(X, y)
+    print("Best parameters:", mlpTransaction.best_params_)
+
     #if IsDecisionTree:
     #    dot_data = export_graphviz(mlpTransaction, out_file=None,
     #                               feature_names=selected_names,
