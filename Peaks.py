@@ -251,7 +251,7 @@ class CandleDataList:
                 else:
                     tempPeakData = copy.deepcopy(peak)
                     self.FeedCandleSticks(tempPeakData, curTime, dividedTimeList, peakList.peakSize)
-                    tempPeakData.Update(curPrice, curTime)
+                    tempPeakData.UpdateAndSetThePeak(curPrice, curTime, peakList.peakSize)
                     startStream = tempPeakData
                 break
         return startStream
