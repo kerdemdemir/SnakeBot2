@@ -330,25 +330,14 @@ class TransactionPattern:
         returnList.append(self.netPriceList[2])
         ruleList.SetIndex(AP.AdjustableParameter.NetPrice168H, index)
         index += 1
-
-
-        returnList.append(self.priceList[-3] / self.priceList[-5])
-        ruleList.SetIndex(AP.AdjustableParameter.DownPeakRatio0, index)
-        index += 1
-        returnList.append(self.priceList[-2] / self.priceList[-4])
-        ruleList.SetIndex(AP.AdjustableParameter.UpPeakRatio0, index)
-        index += 1
         returnList.append(self.TotalPower(0) / self.averageVolume)
         ruleList.SetIndex(AP.AdjustableParameter.PowerRatio0, index)
         index += 1
         returnList.append(self.TotalPower(1) / self.averageVolume)
         ruleList.SetIndex(AP.AdjustableParameter.PowerRatio1, index)
         index += 1
-        returnList.append(self.longPrices[-3] / self.longPrices[-5])
-        ruleList.SetIndex(AP.AdjustableParameter.DownPeakRatio1, index)
-        index += 1
-        returnList.append(self.longPrices[-2] / self.longPrices[-4])
-        ruleList.SetIndex(AP.AdjustableParameter.UpPeakRatio1, index)
+        returnList.append(self.peaks[-1])
+        ruleList.SetIndex(AP.AdjustableParameter.PeakTime0, index)
         index += 1
         returnList.append(self.longPeaks[-1])
         ruleList.SetIndex(AP.AdjustableParameter.PeakLast0, index)
@@ -359,7 +348,13 @@ class TransactionPattern:
         returnList.append(self.longPeaks[-3])
         ruleList.SetIndex(AP.AdjustableParameter.PeakLast2, index)
         index += 1
-
+        returnList.append(self.longPeaks[-4])
+        ruleList.SetIndex(AP.AdjustableParameter.PeakLast3, index)
+        index += 1
+        returnList.append(self.longPeaks[-5])
+        ruleList.SetIndex(AP.AdjustableParameter.PeakLast4, index)
+        index += 1
+        #returnList.append(self.timeList[-1])
         return returnList
 
     def __repr__(self):

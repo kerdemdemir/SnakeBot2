@@ -306,10 +306,10 @@ class SuddenChangeHandler:
 
 
         isUpOrDownTrend = pattern.SetPeaks(lastPrice, curTimeInMiliSecs//1000, self.candleDataList, self.dataList)
-        if AP.IsTraningUpPeaks and isUpOrDownTrend == Peaks.PriceTrendSide.DOWN:
-            return
-        if not AP.IsTraningUpPeaks and isUpOrDownTrend == Peaks.PriceTrendSide.UP:
-            return
+        #if AP.IsTraningUpPeaks and isUpOrDownTrend == Peaks.PriceTrendSide.DOWN:
+        #    return
+        #if not AP.IsTraningUpPeaks and isUpOrDownTrend == Peaks.PriceTrendSide.UP:
+        #    return
 
         if isUpOrDownTrend == Peaks.PriceTrendSide.UP:
             if curPattern.lastBuyLongWall != 0.0 or curPattern.lastSellLongWall != 0.0:
@@ -349,9 +349,9 @@ class SuddenChangeHandler:
         if pattern.marketStateList[1] > 3:
             return
 
-        if AP.IsTraningUpPeaks:
-            if pattern.timeList[-1] > 0:
-                return
+        #if AP.IsTraningUpPeaks:
+        #    if pattern.timeList[-1] > 0:
+        #        return
         k = 0
         rules.strikeCount = 0
         for i in range(len(pattern.transactionBuyList)):
@@ -386,18 +386,12 @@ class SuddenChangeHandler:
         if rules.ControlClamp(AP.AdjustableParameter.NetPrice168H, pattern.netPriceList[2]):
             return
 
-        if rules.ControlClamp(AP.AdjustableParameter.DownPeakRatio0, pattern.priceList[-3] / pattern.priceList[-5]):
-            return
-        if rules.ControlClamp(AP.AdjustableParameter.UpPeakRatio0 , pattern.priceList[-2] / pattern.priceList[-4]):
-            return
         if rules.ControlClamp(AP.AdjustableParameter.PowerRatio0, pattern.TotalPower(0) / pattern.averageVolume):
             return
         if rules.ControlClamp(AP.AdjustableParameter.PowerRatio1, pattern.TotalPower(1) / pattern.averageVolume):
             return
 
-        if rules.ControlClamp(AP.AdjustableParameter.DownPeakRatio1, pattern.longPrices[-3] / pattern.longPrices[-5]):
-            return
-        if rules.ControlClamp(AP.AdjustableParameter.UpPeakRatio1 , pattern.longPrices[-2] / pattern.longPrices[-4]):
+        if rules.ControlClamp(AP.AdjustableParameter.PeakTime0, pattern.peaks[-1]):
             return
         if rules.ControlClamp(AP.AdjustableParameter.PeakLast0, pattern.longPeaks[-1]):
             return
@@ -405,7 +399,10 @@ class SuddenChangeHandler:
             return
         if rules.ControlClamp(AP.AdjustableParameter.PeakLast2, pattern.longPeaks[-3]):
             return
-
+        if rules.ControlClamp(AP.AdjustableParameter.PeakLast3, pattern.longPeaks[-4]):
+            return
+        if rules.ControlClamp(AP.AdjustableParameter.PeakLast4, pattern.longPeaks[-5]):
+            return
         #if rules.ControlClamp(AP.AdjustableParameter.MarketState, pattern.marketStateList[1]):
         #    return
 

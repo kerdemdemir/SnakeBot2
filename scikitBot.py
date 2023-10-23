@@ -52,17 +52,16 @@ if not IsDecisionTree:
 else:
     parameter_space = {
         'max_depth': [ 4, 6, 8, 10],
-        'min_samples_split': [10, 20, 40, 80, 150]
+        'min_samples_split': [50, 65, 80, 100, 120, 150]
     }
 suddenChangeManager = SuddenChangeTransactions.SuddenChangeManager(transParamList)
-
 
 parameterHeaders = ["TotalCount0", "TotalBuyPower0", "TotalSellPower0", "Price0",
                     "TotalCount1","TotalBuyPower1","TotalSellPower1","Price1",
                     "TotalCount2", "TotalBuyPower2", "TotalSellPower2", "Price2",
                     "MaxPowInDetail", "AverageVolume", "JumpCount10M", "JumpCount1H", "JumpCount12H",
-                    "NetPrice1H", "NetPrice168H", "DownPeakRatio0", "UpPeakRatio0", "PowerRatio0", "PowerRatio1",
-                    "DownPeakRatio1", "UpPeakRatio1", "PeakLast0", "PeakLast1", "PeakLast2"]
+                    "NetPrice1H", "NetPrice168H","PowerRatio0", "PowerRatio1","PeakTime0", "PeakLast0",
+                    "PeakLast1", "PeakLast2", "PeakLast3", "PeakLast4"]
 
 def Predict( messageChangeTimeTransactionStrList):
 

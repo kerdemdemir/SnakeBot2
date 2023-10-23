@@ -154,11 +154,11 @@ class Rule:
         self.isLongRatio = "LongPrice" in self.tags
         self.isAverageVol = IsTraningUpPeaks and self.adjustableParameter.startswith("AverageVolume")
         self.isSkipAverageVol = False and (self.isAverageVol and IsWorkingLowVolumes and self.checkType == CheckType.Big) or (self.isAverageVol and not IsWorkingLowVolumes and self.checkType == CheckType.Small)
-        self.isSkipTuning = self.isPeakRatio or self.isLongRatio or self.isSkipAverageVol or ("NoTune" in self.tags)
+        self.isSkipTuning = self.isSkipAverageVol or ("NoTune" in self.tags)
         self.isNonZero = "NonZero" in self.tags
         self.isTransaction = "Transaction" in self.tags
         self.isShortTerm = self.isTransaction or "NetPrice" in self.tags or "Detail" in self.tags
-        if  IsTeaching and not IsTraining and not IsMachineLearning:
+        if IsTeaching and not IsTraining and not IsMachineLearning:
             if not self.isTuned:
                 self.threshold = 100000000
                 if self.IsSmall():
