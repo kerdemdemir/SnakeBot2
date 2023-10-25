@@ -312,10 +312,6 @@ class SuddenChangeHandler:
         if not AP.IsTraningUpPeaks and isUpOrDownTrend == Peaks.PriceTrendSide.UP:
             return
 
-        if AP.IsTraningUpPeaks:
-            if pattern.timeList[-1] > 25:
-                return
-
         if isUpOrDownTrend == Peaks.PriceTrendSide.UP:
             if curPattern.lastBuyLongWall != 0.0 or curPattern.lastSellLongWall != 0.0:
                 if curPattern.lastBuyWall > 1.05 or curPattern.lastBuyWall< 0.05 or \

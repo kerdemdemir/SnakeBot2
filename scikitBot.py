@@ -42,17 +42,16 @@ IsCorrelationMatrix = True
 IsDecisionTree = True
 
 
+
 currentProbs = []
 if not IsDecisionTree:
     parameter_space = {
-        'hidden_layer_sizes': [ (24,24, 24),(36,36,36),(24, 24, 24, 24),(24,24),(36,36) ],
-        'solver': ['sgd', 'adam'],
-        'alpha': [0.0001, 0.001, 0.01],
+        'hidden_layer_sizes': [ (24,24, 24),(36,36,36) ]
     }
 else:
     parameter_space = {
-        'max_depth': [ 4, 6, 8, 10],
-        'min_samples_split': [50, 65, 80, 100, 120, 150]
+        'max_depth': [ 4, 5, 6, 8 ],
+        'min_samples_split': [50,  100, 150, 200, 250]
     }
 suddenChangeManager = SuddenChangeTransactions.SuddenChangeManager(transParamList)
 
