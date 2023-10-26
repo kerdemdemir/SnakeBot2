@@ -357,14 +357,6 @@ class TransactionPattern:
         ruleList.SetIndex(AP.AdjustableParameter.UpPeakRatio1, upPeakRatioLast1)
         index += 1
 
-
-        returnList.append(downPeakRatioLast/upPeakRatioLast1)
-        returnList.append(upPeakRatioLast1/downPeakRatioLast1)
-        returnList.append(upPeakRatioLast1)
-        returnList.append(downPeakRatioLast1)
-        returnList.append(upPeakRatioLast1/upPeakRatioLast)
-        returnList.append(downPeakRatioLast1/downPeakRatioLast)
-
         return returnList
 
     def __repr__(self):
