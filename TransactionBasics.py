@@ -353,8 +353,8 @@ class TransactionPattern:
         index += 1
         downPeakRatioLast1 = self.priceList[-5] / self.priceList[-7]
         upPeakRatioLast1 = self.priceList[-4] / self.priceList[-6]
-        returnList.append(upPeakRatioLast)
-        ruleList.SetIndex(AP.AdjustableParameter.UpPeakRatio1, upPeakRatioLast1)
+        returnList.append(upPeakRatioLast1)
+        ruleList.SetIndex(AP.AdjustableParameter.UpPeakRatio1, index)
         index += 1
 
         return returnList
