@@ -328,7 +328,7 @@ class SuddenChangeHandler:
                         curPattern.lastSellLongWall > 2.3 or curPattern.lastSellLongWall < 0.14:
                     return
 
-        if len(pattern.timeList) < 5:
+        if len(pattern.timeList) < 7:
             return
         pattern.firstToLastRatio = self.dataList[0].firstPrice / lastPrice
         #self.__GetWithTime(jsonIn, curTimeInMiliSecs - 10000, curTimeInMiliSecs, 10)
@@ -384,26 +384,31 @@ class SuddenChangeHandler:
 
         if rules.ControlClamp(AP.AdjustableParameter.NetPrice1H, pattern.netPriceList[0]):
             return
-        if rules.ControlClamp(AP.AdjustableParameter.NetPrice168H, pattern.netPriceList[2]):
+        if rules.ControlClamp(AP.AdjustableParameter.NetPrice8H, pattern.netPriceList[1]):
+            return
+        if rules.ControlClamp(AP.AdjustableParameter.NetPrice24H, pattern.netPriceList[2]):
+            return
+        if rules.ControlClamp(AP.AdjustableParameter.NetPrice168H, pattern.netPriceList[3]):
             return
 
-        if rules.ControlClamp(AP.AdjustableParameter.PowerRatio0, pattern.TotalPower(0) / pattern.averageVolume):
-            return
-        if rules.ControlClamp(AP.AdjustableParameter.PowerRatio1, pattern.TotalPower(1) / pattern.averageVolume):
+        if rules.ControlClamp(AP.AdjustableParameter.PeakTime0, pattern.timeList[-1]):
             return
 
-        if rules.ControlClamp(AP.AdjustableParameter.PeakTime0, pattern.peaks[-1]):
+        if rules.ControlClamp(AP.AdjustableParameter.PeakLast0, pattern.peaks[-1]):
             return
-        if rules.ControlClamp(AP.AdjustableParameter.PeakLast0, pattern.longPeaks[-1]):
+        if rules.ControlClamp(AP.AdjustableParameter.PeakLast1, pattern.peaks[-2]):
             return
-        if rules.ControlClamp(AP.AdjustableParameter.PeakLast1, pattern.longPeaks[-2]):
+        downPeakRatioLast = pattern.priceList[-3] / pattern.priceList[-5]
+        upPeakRatioLast = pattern.priceList[-2] / pattern.priceList[-4]
+        if rules.ControlClamp(AP.AdjustableParameter.DownPeakRatio0, upPeakRatioLast/downPeakRatioLast):
             return
-        if rules.ControlClamp(AP.AdjustableParameter.PeakLast2, pattern.longPeaks[-3]):
+        if rules.ControlClamp(AP.AdjustableParameter.UpPeakRatio0, upPeakRatioLast):
             return
-        if rules.ControlClamp(AP.AdjustableParameter.PeakLast3, pattern.longPeaks[-4]):
+
+        upPeakRatioLast1 = pattern.priceList[-4] / pattern.priceList[-6]
+        if rules.ControlClamp(AP.AdjustableParameter.UpPeakRatio1, upPeakRatioLast1):
             return
-        if rules.ControlClamp(AP.AdjustableParameter.PeakLast4, pattern.longPeaks[-5]):
-            return
+
         #if rules.ControlClamp(AP.AdjustableParameter.MarketState, pattern.marketStateList[1]):
         #    return
 

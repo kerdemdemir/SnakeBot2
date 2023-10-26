@@ -180,13 +180,13 @@ class CandleDataList:
     def __init__(self):
         self.candleStickDataList = []
         self.peaks = PeakList(0.03)
-        self.longPeaks = PeakList(0.1)
+        self.longPeaks = PeakList(0.08)
 
     def feed(self, jsonIn):
         self.peaks = PeakList(0.03)
-        self.longPeaks = PeakList(0.1)
+        #self.longPeaks = PeakList(0.08)
         self.feedPeaks(jsonIn, self.peaks)
-        self.feedPeaks(jsonIn, self.longPeaks)
+        #self.feedPeaks(jsonIn, self.longPeaks)
     def feedPeaks(self, jsonIn, peakList):
         self.candleStickDataList = []
         for candleStick in jsonIn:
@@ -205,9 +205,13 @@ class CandleDataList:
 
         if len(peakList.peakDataList)>0:
             peakList.peakDataList.pop(0)
-    def CountPeaks(self, timeSec, durationSec ):
+    def CountPeaks(self, timeSec, durationSec, isLongPeak = False ):
         counter = 0
-        tempList = self.peaks.peakDataList + [self.peaks.curStream]
+        if isLongPeak:
+            tempList = self.longPeaks.peakDataList + [self.longPeaks.curStream]
+        else:
+            tempList = self.peaks.peakDataList + [self.peaks.curStream]
+
         for peak in reversed(tempList):
             if peak.IsTimeBefore(timeSec):
                 continue
