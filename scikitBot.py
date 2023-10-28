@@ -58,9 +58,9 @@ suddenChangeManager = SuddenChangeTransactions.SuddenChangeManager(transParamLis
 parameterHeaders = ["TotalCount0", "TotalBuyPower0", "TotalSellPower0", "Price0",
                     "TotalCount1","TotalBuyPower1","TotalSellPower1","Price1",
                     "TotalCount2", "TotalBuyPower2", "TotalSellPower2", "Price2",
-                    "MaxPowInDetail", "AverageVolume", "JumpCount10M", "JumpCount1H", "JumpCount12H",
+                    "MaxPowInDetail", "AverageVolume", "JumpCount1H", "JumpCount12H",
                     "NetPrice1H", "NetPrice8H", "NetPrice24H", "NetPrice168H","PeakTime0", "PeakLast0",
-                    "PeakLast1", "DownPeakRatio0", "UpPeakRatio0", "UpPeakRatio1"]
+                    "PeakLast1", "DownPeakRatio0", "UpPeakRatio0"]
 
 def Predict( messageChangeTimeTransactionStrList):
 
