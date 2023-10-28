@@ -312,9 +312,6 @@ class TransactionPattern:
         ruleList.SetIndex(AP.AdjustableParameter.AverageVolume, index)
         index += 1
 
-        returnList.append(self.jumpCountList[0])
-        ruleList.SetIndex(AP.AdjustableParameter.JumpCount10M, index)
-        index += 1
         returnList.append(self.jumpCountList[1])
         ruleList.SetIndex(AP.AdjustableParameter.JumpCount1H, index)
         index += 1
@@ -353,9 +350,9 @@ class TransactionPattern:
         index += 1
         downPeakRatioLast1 = self.priceList[-5] / self.priceList[-7]
         upPeakRatioLast1 = self.priceList[-4] / self.priceList[-6]
-        returnList.append(upPeakRatioLast1)
-        ruleList.SetIndex(AP.AdjustableParameter.UpPeakRatio1, index)
-        index += 1
+        #returnList.append(upPeakRatioLast1)
+        #ruleList.SetIndex(AP.AdjustableParameter.UpPeakRatio1, index)
+        #index += 1
 
         return returnList
 

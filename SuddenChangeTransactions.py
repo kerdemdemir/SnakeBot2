@@ -306,12 +306,12 @@ class SuddenChangeHandler:
 
 
         isUpOrDownTrend = pattern.SetPeaks(lastPrice, curTimeInMiliSecs//1000, self.candleDataList, self.dataList)
-
         if AP.IsTraningUpPeaks and isUpOrDownTrend == Peaks.PriceTrendSide.DOWN:
             return
         if not AP.IsTraningUpPeaks and isUpOrDownTrend == Peaks.PriceTrendSide.UP:
             return
-
+        if  pattern.jumpCountList[0] > 1:
+           return
         if isUpOrDownTrend == Peaks.PriceTrendSide.UP:
             if curPattern.lastBuyLongWall != 0.0 or curPattern.lastSellLongWall != 0.0:
                 if curPattern.lastBuyWall > 1.05 or curPattern.lastBuyWall< 0.05 or \
@@ -375,8 +375,6 @@ class SuddenChangeHandler:
         if rules.ControlClamp(AP.AdjustableParameter.AverageVolume, pattern.averageVolume):
             return
 
-        if rules.ControlClamp(AP.AdjustableParameter.JumpCount10M, pattern.jumpCountList[0]):
-           return
         if rules.ControlClamp(AP.AdjustableParameter.JumpCount1H, pattern.jumpCountList[1]):
            return
         if rules.ControlClamp(AP.AdjustableParameter.JumpCount12H, pattern.jumpCountList[2]):
@@ -405,9 +403,9 @@ class SuddenChangeHandler:
         if rules.ControlClamp(AP.AdjustableParameter.UpPeakRatio0, upPeakRatioLast):
             return
 
-        upPeakRatioLast1 = pattern.priceList[-4] / pattern.priceList[-6]
-        if rules.ControlClamp(AP.AdjustableParameter.UpPeakRatio1, upPeakRatioLast1):
-            return
+        #upPeakRatioLast1 = pattern.priceList[-4] / pattern.priceList[-6]
+        #if rules.ControlClamp(AP.AdjustableParameter.UpPeakRatio1, upPeakRatioLast1):
+        #    return
 
         #if rules.ControlClamp(AP.AdjustableParameter.MarketState, pattern.marketStateList[1]):
         #    return
