@@ -312,9 +312,6 @@ class TransactionPattern:
         ruleList.SetIndex(AP.AdjustableParameter.AverageVolume, index)
         index += 1
 
-        returnList.append(self.jumpCountList[1])
-        ruleList.SetIndex(AP.AdjustableParameter.JumpCount1H, index)
-        index += 1
         returnList.append(self.jumpCountList[2])
         ruleList.SetIndex(AP.AdjustableParameter.JumpCount12H, index)
         index += 1
@@ -333,9 +330,6 @@ class TransactionPattern:
         returnList.append(self.timeList[-1])
         ruleList.SetIndex(AP.AdjustableParameter.PeakTime0, index)
         index += 1
-        returnList.append(self.peaks[-1])
-        ruleList.SetIndex(AP.AdjustableParameter.PeakLast0, index)
-        index += 1
         returnList.append(self.peaks[-2])
         ruleList.SetIndex(AP.AdjustableParameter.PeakLast1, index)
         index += 1
@@ -353,7 +347,6 @@ class TransactionPattern:
         #returnList.append(upPeakRatioLast1)
         #ruleList.SetIndex(AP.AdjustableParameter.UpPeakRatio1, index)
         #index += 1
-
         return returnList
 
     def __repr__(self):

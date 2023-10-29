@@ -312,6 +312,10 @@ class SuddenChangeHandler:
             return
         if  pattern.jumpCountList[0] > 1:
            return
+        if  pattern.jumpCountList[1] > 4:
+           return
+        if pattern.peaks[-1] < 0.998:
+           return
         if isUpOrDownTrend == Peaks.PriceTrendSide.UP:
             if curPattern.lastBuyLongWall != 0.0 or curPattern.lastSellLongWall != 0.0:
                 if curPattern.lastBuyWall > 1.05 or curPattern.lastBuyWall< 0.05 or \
@@ -375,8 +379,6 @@ class SuddenChangeHandler:
         if rules.ControlClamp(AP.AdjustableParameter.AverageVolume, pattern.averageVolume):
             return
 
-        if rules.ControlClamp(AP.AdjustableParameter.JumpCount1H, pattern.jumpCountList[1]):
-           return
         if rules.ControlClamp(AP.AdjustableParameter.JumpCount12H, pattern.jumpCountList[2]):
            return
 
@@ -392,8 +394,6 @@ class SuddenChangeHandler:
         if rules.ControlClamp(AP.AdjustableParameter.PeakTime0, pattern.timeList[-1]):
             return
 
-        if rules.ControlClamp(AP.AdjustableParameter.PeakLast0, pattern.peaks[-1]):
-            return
         if rules.ControlClamp(AP.AdjustableParameter.PeakLast1, pattern.peaks[-2]):
             return
         downPeakRatioLast = pattern.priceList[-3] / pattern.priceList[-5]
@@ -446,7 +446,10 @@ class SuddenChangeHandler:
                     pattern.GoalReached(timeDiff, 1.025)
                     return 2
                 if timeDiff > 300:
-                    return -1
+                    if self.dataList[i].lastPrice/priceIn > 1.005:
+                        return -1
+                    else:
+                        return 2
                 if self.dataList[i].lastPrice/priceIn>1.08:
                     return 1
             return 2

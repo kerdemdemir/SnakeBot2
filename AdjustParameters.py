@@ -3,7 +3,7 @@ import numpy as np
 import json
 from datetime import datetime
 
-IsTeaching = False
+IsTeaching = True
 IsTraining = not IsTeaching
 IsMachineLearning = IsTraining
 IsShortTerm = False
@@ -216,8 +216,8 @@ class Rule:
                 biggerList = flattened1D[flattened1D > minVal]
                 if biggerList.size != 0:
                     goodValue = biggerList[0]
-            self.badCount = np.count_nonzero(compareList < goodValue) / compareList.size
-            self.goodCount = np.count_nonzero(list < goodValue) / list.size
+            self.badCount = np.count_nonzero(compareList <= goodValue) / compareList.size
+            self.goodCount = np.count_nonzero(list <= goodValue) / list.size
         else:
             maxVal = np.max(list)
             isGoodValueLargest = goodValue >= maxVal
@@ -227,7 +227,7 @@ class Rule:
                 if smallerList.size != 0:
                     goodValue = smallerList[-1]
             self.badCount = np.count_nonzero(compareList >= goodValue) / compareList.size
-            self.goodCount = np.count_nonzero(list > goodValue) / list.size
+            self.goodCount = np.count_nonzero(list >= goodValue) / list.size
 
         self.quantileVal = goodValue
     def GetValue(self):
