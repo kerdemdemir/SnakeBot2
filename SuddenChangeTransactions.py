@@ -312,7 +312,7 @@ class SuddenChangeHandler:
             return
         if  pattern.jumpCountList[0] > 1:
            return
-        if  pattern.jumpCountList[1] > 4:
+        if  pattern.jumpCountList[1] > 5:
            return
         if pattern.peaks[-1] < 0.998:
            return

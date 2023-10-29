@@ -216,8 +216,8 @@ class Rule:
                 biggerList = flattened1D[flattened1D > minVal]
                 if biggerList.size != 0:
                     goodValue = biggerList[0]
-            self.badCount = np.count_nonzero(compareList <= goodValue) / compareList.size
-            self.goodCount = np.count_nonzero(list <= goodValue) / list.size
+            self.badCount = np.count_nonzero(compareList < goodValue) / compareList.size
+            self.goodCount = np.count_nonzero(list < goodValue) / list.size
         else:
             maxVal = np.max(list)
             isGoodValueLargest = goodValue >= maxVal
@@ -226,8 +226,8 @@ class Rule:
                 smallerList = flattened1D[flattened1D < maxVal]
                 if smallerList.size != 0:
                     goodValue = smallerList[-1]
-            self.badCount = np.count_nonzero(compareList >= goodValue) / compareList.size
-            self.goodCount = np.count_nonzero(list >= goodValue) / list.size
+            self.badCount = np.count_nonzero(compareList > goodValue) / compareList.size
+            self.goodCount = np.count_nonzero(list > goodValue) / list.size
 
         self.quantileVal = goodValue
     def GetValue(self):
@@ -305,8 +305,8 @@ class RuleList:
                 continue
 
             curVal = rule.badCount - rule.goodCount
-            #if rule.goodCount > 0.25:
-            #    curVal /= (rule.goodCount/0.1)
+            if rule.goodCount > 0.25:
+                curVal /= (rule.goodCount/0.1)
             if curVal > bestVal and not rule.isTuned and rule.tuneCount < 2  :
                 bestVal = curVal
                 selectedRule = rule
