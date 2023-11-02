@@ -84,9 +84,6 @@ class SuddenChangeHandler:
             if self.isRise:
                 if buySellPriceRatio < 1.02:
                     return
-            else:
-                if buySellPriceRatio > 1.05:
-                    return
 
         self.lowestTransaction = TransactionBasics.TransactionCountPerSecBase
         self.acceptedTransLimit = TransactionBasics.TransactionLimitPerSecBase
@@ -559,7 +556,7 @@ class SuddenChangeMerger:
             for i in range(len(self.patternList[0])):
                 curRules = rules.GetRulesWithIndex(i)
                 for rule in curRules:
-                    rule.SetEliminationCounts(buyList[:, i], badList[:, i], 0.1)
+                    rule.SetEliminationCounts(buyList[:, i], badList[:, i], 0.05)
                     rule.Print()
 
             isBadCountBigger = rules.SelectBestQuantile()
