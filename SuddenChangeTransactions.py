@@ -205,10 +205,7 @@ class SuddenChangeHandler:
         if AP.IsTeaching or AP.IsMachineLearning:
             limit = TransactionBasics.MaximumSampleSizeFromGoodPattern
         if len(self.patternList) > limit:
-            if AP.IsTraining:
-                self.patternList.clear()
-                self.patternList.append(self.bestPattern)
-            else:
+            if not AP.IsTraining:
                 minimumPattern = min(self.patternList, key=lambda x:int(x.lastPrice))
                 self.patternList = []
                 self.patternList.append(minimumPattern)

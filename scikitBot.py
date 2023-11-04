@@ -22,6 +22,7 @@ from sklearn.metrics import f1_score, make_scorer
 import SuddenChangeTransactions
 import TransactionBasics
 
+import pydotplus
 
 transactionBinCountList = [6,8]
 totalTimeCount = 6
@@ -36,7 +37,7 @@ transactionScaler = None
 inputTransform = None
 mlpTransaction = None
 IsPCA = False
-IsKMeans = True
+IsKMeans = False
 IsRandomForest = False
 IsCorrelationMatrix = True
 IsDecisionTree = True
@@ -50,8 +51,9 @@ if not IsDecisionTree:
     }
 else:
     parameter_space = {
-        'max_depth': [ 4, 5, 6, 8 ],
-        'min_samples_split': [50,  100, 150, 200, 250]
+        'max_depth': [  15, 20 ],
+        'min_samples_split': [50],
+        'min_samples_leaf': [25]
     }
 suddenChangeManager = SuddenChangeTransactions.SuddenChangeManager(transParamList)
 
@@ -81,7 +83,10 @@ def Predict( messageChangeTimeTransactionStrList):
     totalFeatures = parameterList #+ resultsChangeFloat[-5:]
 
     totalFeaturesNumpy = np.array(totalFeatures).reshape(1, -1)
-    totalFeaturesScaled = inputTransform.transform(totalFeaturesNumpy)
+    if inputTransform != None:
+        totalFeaturesScaled = inputTransform.transform(totalFeaturesNumpy)
+    else:
+        totalFeaturesScaled = totalFeaturesNumpy
     print("I will predict: ", totalFeatures, " scaled: ", totalFeaturesScaled)
     npTotalFeatures = np.array(totalFeaturesScaled)
     npTotalFeatures = npTotalFeatures.reshape(1, -1)
@@ -100,8 +105,8 @@ def Learn():
     else:
         mlpTransaction = MLPClassifier(hidden_layer_sizes=(24, 24, 24), activation='relu',
                                       solver='adam', learning_rate='adaptive', alpha=0.001, max_iter=500)
-    scoring = make_scorer(f1_score, pos_label=1)
-    mlpTransaction = GridSearchCV(mlpTransaction, param_grid=parameter_space, cv=5, scoring=scoring)
+    #scoring = make_scorer(f1_score, pos_label=1)
+    mlpTransaction = GridSearchCV(mlpTransaction, param_grid=parameter_space, cv=5, refit=True)
 
     #parameterHeaders = ["TotalCount0", "TotalBuyPower0", "TotalSellPower0", "Price0",
     #                    "TotalCount1", "TotalBuyPower1", "TotalSellPower1", "Price1",
@@ -188,15 +193,15 @@ def Learn():
 
         inputTransform = selector
 
-    # Print the selected feature names
-    print("Selected feature names:")
-    print(selected_names)
 
 
     if isUseTest:
         numpyArrTest = suddenChangeManager.toTransactionFeaturesNumpy(True)
         #X_test = transactionScaler.transform(numpyArrTest)
-        X_test = inputTransform.transform(numpyArrTest)
+        if inputTransform != None:
+            X_test = inputTransform.transform(numpyArrTest)
+        else:
+            X_test = numpyArrTest
         y_test = suddenChangeManager.toTransactionResultsNumpy(True)
     del suddenChangeManager
 
@@ -204,14 +209,14 @@ def Learn():
     print("Best parameters:", mlpTransaction.best_params_)
 
     #if IsDecisionTree:
-    #    dot_data = export_graphviz(mlpTransaction, out_file=None,
-    #                               feature_names=selected_names,
-    #                               class_names=["Fail","Good"],
-    #                               filled=True, rounded=True,
-    #                               special_characters=True)
+    #   dot_data = export_graphviz(mlpTransaction.best_estimator_, out_file=None,
+    #                              feature_names=feature_names,
+    #                              class_names=["Fail","Good"],
+    #                              filled=True, rounded=True,
+    #                              special_characters=True)
 #
-    #    graph = pydot.graph_from_dot_data(dot_data)
-    #    graph[0].write_png("decision_tree2.png")
+    #   graph = pydotplus.graph_from_dot_data(dot_data)
+    #   graph.write_png('decision_tree.png')
     #X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.05, random_state=40)
 
     if isUseTest:
