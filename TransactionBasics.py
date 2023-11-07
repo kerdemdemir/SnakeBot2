@@ -311,7 +311,12 @@ class TransactionPattern:
         returnList.append(self.averageVolume)
         ruleList.SetIndex(AP.AdjustableParameter.AverageVolume, index)
         index += 1
-
+        returnList.append(self.jumpCountList[0])
+        ruleList.SetIndex(AP.AdjustableParameter.JumpCount10M, index)
+        index += 1
+        returnList.append(self.jumpCountList[1])
+        ruleList.SetIndex(AP.AdjustableParameter.JumpCount1H, index)
+        index += 1
         returnList.append(self.jumpCountList[2])
         ruleList.SetIndex(AP.AdjustableParameter.JumpCount12H, index)
         index += 1
@@ -330,17 +335,35 @@ class TransactionPattern:
         returnList.append(self.timeList[-1])
         ruleList.SetIndex(AP.AdjustableParameter.PeakTime0, index)
         index += 1
+        returnList.append(self.timeList[-2])
+        ruleList.SetIndex(AP.AdjustableParameter.PeakTime1, index)
+        index += 1
+        returnList.append(self.timeList[-3])
+        ruleList.SetIndex(AP.AdjustableParameter.PeakTime2, index)
+        index += 1
         returnList.append(self.peaks[-2])
         ruleList.SetIndex(AP.AdjustableParameter.PeakLast1, index)
+        index += 1
+        returnList.append(self.peaks[-3])
+        ruleList.SetIndex(AP.AdjustableParameter.PeakLast2, index)
+        index += 1
+        returnList.append(self.peaks[-4])
+        ruleList.SetIndex(AP.AdjustableParameter.PeakLast3, index)
+        index += 1
+        returnList.append(self.peaks[-5])
+        ruleList.SetIndex(AP.AdjustableParameter.PeakLast4, index)
         index += 1
 
         downPeakRatioLast = self.priceList[-3] / self.priceList[-5]
         upPeakRatioLast = self.priceList[-2] / self.priceList[-4]
-        returnList.append(upPeakRatioLast/downPeakRatioLast)
+        returnList.append(downPeakRatioLast)
         ruleList.SetIndex(AP.AdjustableParameter.DownPeakRatio0, index)
         index += 1
         returnList.append(upPeakRatioLast)
         ruleList.SetIndex(AP.AdjustableParameter.UpPeakRatio0, index)
+        index += 1
+        returnList.append(upPeakRatioLast/downPeakRatioLast)
+        ruleList.SetIndex(AP.AdjustableParameter.DownPeakRatio1, index)
         index += 1
         downPeakRatioLast1 = self.priceList[-5] / self.priceList[-7]
         upPeakRatioLast1 = self.priceList[-4] / self.priceList[-6]

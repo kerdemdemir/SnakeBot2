@@ -304,10 +304,9 @@ class SuddenChangeHandler:
             return
         if not AP.IsTraningUpPeaks and isUpOrDownTrend == Peaks.PriceTrendSide.UP:
             return
-        if  pattern.jumpCountList[0] > 1:
-           return
-        if  pattern.jumpCountList[1] > 5:
-           return
+        #if  pattern.jumpCountList[0] <= 1 and pattern.jumpCountList[1] <= 5:
+        #   return
+
         if pattern.peaks[-1] < 0.998:
            return
         if isUpOrDownTrend == Peaks.PriceTrendSide.UP:
@@ -372,7 +371,10 @@ class SuddenChangeHandler:
 
         if rules.ControlClamp(AP.AdjustableParameter.AverageVolume, pattern.averageVolume):
             return
-
+        if rules.ControlClamp(AP.AdjustableParameter.JumpCount10M, pattern.jumpCountList[0]):
+           return
+        if rules.ControlClamp(AP.AdjustableParameter.JumpCount1H, pattern.jumpCountList[1]):
+           return
         if rules.ControlClamp(AP.AdjustableParameter.JumpCount12H, pattern.jumpCountList[2]):
            return
 
@@ -387,16 +389,28 @@ class SuddenChangeHandler:
 
         if rules.ControlClamp(AP.AdjustableParameter.PeakTime0, pattern.timeList[-1]):
             return
+        if rules.ControlClamp(AP.AdjustableParameter.PeakTime1, pattern.timeList[-2]):
+            return
+        if rules.ControlClamp(AP.AdjustableParameter.PeakTime2, pattern.timeList[-3]):
+            return
 
         if rules.ControlClamp(AP.AdjustableParameter.PeakLast1, pattern.peaks[-2]):
             return
+        if rules.ControlClamp(AP.AdjustableParameter.PeakLast2, pattern.peaks[-3]):
+            return
+        if rules.ControlClamp(AP.AdjustableParameter.PeakLast3, pattern.peaks[-4]):
+            return
+        if rules.ControlClamp(AP.AdjustableParameter.PeakLast4, pattern.peaks[-5]):
+            return
+
         downPeakRatioLast = pattern.priceList[-3] / pattern.priceList[-5]
         upPeakRatioLast = pattern.priceList[-2] / pattern.priceList[-4]
-        if rules.ControlClamp(AP.AdjustableParameter.DownPeakRatio0, upPeakRatioLast/downPeakRatioLast):
+        if rules.ControlClamp(AP.AdjustableParameter.DownPeakRatio0, downPeakRatioLast):
             return
         if rules.ControlClamp(AP.AdjustableParameter.UpPeakRatio0, upPeakRatioLast):
             return
-
+        if rules.ControlClamp(AP.AdjustableParameter.DownPeakRatio1, upPeakRatioLast / downPeakRatioLast):
+            return
         #upPeakRatioLast1 = pattern.priceList[-4] / pattern.priceList[-6]
         #if rules.ControlClamp(AP.AdjustableParameter.UpPeakRatio1, upPeakRatioLast1):
         #    return
