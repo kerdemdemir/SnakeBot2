@@ -51,7 +51,7 @@ if not IsDecisionTree:
     }
 else:
     parameter_space = {
-        'max_depth': [ 25 ],
+        'max_depth': [ 25],
         'min_samples_split': [100],
         'min_samples_leaf': [25]
     }
@@ -62,8 +62,14 @@ parameterHeaders = ["TotalCount0", "TotalBuyPower0", "TotalSellPower0", "Price0"
                     "TotalCount2", "TotalBuyPower2", "TotalSellPower2", "Price2",
                     "MaxPowInDetail", "AverageVolume", "JumpCount10M", "JumpCount1H", "JumpCount12H",
                     "NetPrice1H", "NetPrice8H", "NetPrice24H", "NetPrice168H","PeakTime0","PeakTime1","PeakTime2",
-                    "PeakLast1","PeakLast2","PeakLast3","PeakLast4", "DownPeakRatio0", "UpPeakRatio0", "DownPeakRatio1"]
+                    "PeakLast1","PeakLast2","PeakLast3","PeakLast4", "DownPeakRatio0", "UpPeakRatio0", "DownPeakRatio1",
+                    "DownPeak1", "UpPeak1", "UpPeakRatio1", "LongPeak1",
+                    "LongPeak2", "LongPeak3", "LongPeak4", "LongPeak5",
+                    "LongTime1", "LongTime2", "LongTime3", "LongDownPeakRatio0",
+                    "LongUpPeakRatio0", "LongUpDownPeakRatio0", "SmallLongRatio0", "SmallLongRatio1", "SmallLongRatio2"
+                    ]
 
+extraHeaders =[]
 def Predict( messageChangeTimeTransactionStrList):
 
     priceStrList = messageChangeTimeTransactionStrList[1].split(",")
@@ -122,7 +128,7 @@ def Learn():
     #returnList.append(self.longPeaks[-2])
     #returnList.append(self.longPeaks[-3])
 
-    feature_names = parameterHeaders
+    feature_names = parameterHeaders+extraHeaders
     numpyArr = suddenChangeManager.toTransactionFeaturesNumpy(False)
     y = suddenChangeManager.toTransactionResultsNumpy(False)
     X = numpyArr

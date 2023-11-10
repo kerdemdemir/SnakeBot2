@@ -205,10 +205,7 @@ class SuddenChangeHandler:
         if AP.IsTeaching or AP.IsMachineLearning:
             limit = TransactionBasics.MaximumSampleSizeFromGoodPattern
         if len(self.patternList) > limit:
-            if not AP.IsTraining:
-                minimumPattern = min(self.patternList, key=lambda x:int(x.lastPrice))
-                self.patternList = []
-                self.patternList.append(minimumPattern)
+            self.patternList = sorted(self.patternList, key=lambda x: int(x.lastPrice))[:TransactionBasics.MaximumSampleSizeFromGoodPattern]
 
         if len(self.badPatternList) > TransactionBasics.MaximumSampleSizeFromPattern:
             randomSampleList = random.sample(self.badPatternList, TransactionBasics.MaximumSampleSizeFromPattern-1)
@@ -439,7 +436,7 @@ class SuddenChangeHandler:
                 timeDiff = self.dataList[i].endTimeInSecs - self.dataList[curIndex].endTimeInSecs
                 if timeDiff > 300:
                     return -1
-                if ratio<0.99:
+                if ratio<0.98:
                     isDropped = True
                 if ratio<0.97:
                     return 2

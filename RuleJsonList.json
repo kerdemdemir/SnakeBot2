@@ -371,6 +371,210 @@
             "threshold": 1.0916056488696564,
             "checkType": ">",
             "tags": ""
+        },
+        {
+            "ruleName": "DownPeak1",
+            "threshold": 0.8030942857142858,
+            "checkType": "<",
+            "tags": ""
+        },
+        {
+            "ruleName": "DownPeak1",
+            "threshold": 3.4698125954198473,
+            "checkType": ">",
+            "tags": ""
+        },
+        {
+            "ruleName": "UpPeak1",
+            "threshold": 0.8030942857142858,
+            "checkType": "<",
+            "tags": ""
+        },
+        {
+            "ruleName": "UpPeak1",
+            "threshold": 3.4698125954198473,
+            "checkType": ">",
+            "tags": ""
+        },
+        {
+            "ruleName": "UpPeakRatio1",
+            "threshold": 3.4698125954198473,
+            "checkType": "<",
+            "tags": ""
+        },
+        {
+            "ruleName": "UpPeakRatio1",
+            "threshold": 0.8030942857142858,
+            "checkType": ">",
+            "tags": ""
+        },
+        {
+            "ruleName": "LongPeak1",
+            "threshold": 3.4698125954198473,
+            "checkType": "<",
+            "tags": ""
+        },
+        {
+            "ruleName": "LongPeak1",
+            "threshold": 0.8030942857142858,
+            "checkType": ">",
+            "tags": ""
+        },
+        {
+            "ruleName": "LongPeak2",
+            "threshold": 3.4698125954198473,
+            "checkType": "<",
+            "tags": ""
+        },
+        {
+            "ruleName": "LongPeak2",
+            "threshold": 0.8030942857142858,
+            "checkType": ">",
+            "tags": ""
+        },
+        {
+            "ruleName": "LongPeak3",
+            "threshold": 3.4698125954198473,
+            "checkType": "<",
+            "tags": ""
+        },
+        {
+            "ruleName": "LongPeak3",
+            "threshold": 0.8030942857142858,
+            "checkType": ">",
+            "tags": ""
+        },
+        {
+            "ruleName": "LongPeak4",
+            "threshold": 3.4698125954198473,
+            "checkType": "<",
+            "tags": ""
+        },
+        {
+            "ruleName": "LongPeak4",
+            "threshold": 0.8030942857142858,
+            "checkType": ">",
+            "tags": ""
+        },
+        {
+            "ruleName": "LongPeak5",
+            "threshold": 3.4698125954198473,
+            "checkType": "<",
+            "tags": ""
+        },
+        {
+            "ruleName": "LongPeak5",
+            "threshold": 0.8030942857142858,
+            "checkType": ">",
+            "tags": ""
+        },
+        {
+            "ruleName": "LongTime1",
+            "threshold": 3.4698125954198473,
+            "checkType": "<",
+            "tags": ""
+        },
+        {
+            "ruleName": "LongTime1",
+            "threshold": 0.8030942857142858,
+            "checkType": ">",
+            "tags": ""
+        },
+        {
+            "ruleName": "LongTime2",
+            "threshold": 3.4698125954198473,
+            "checkType": "<",
+            "tags": ""
+        },
+        {
+            "ruleName": "LongTime2",
+            "threshold": 0.8030942857142858,
+            "checkType": ">",
+            "tags": ""
+        },
+        {
+            "ruleName": "LongTime3",
+            "threshold": 3.4698125954198473,
+            "checkType": "<",
+            "tags": ""
+        },
+        {
+            "ruleName": "LongTime3",
+            "threshold": 0.8030942857142858,
+            "checkType": ">",
+            "tags": ""
+        },
+        {
+            "ruleName": "LongDownPeakRatio0",
+            "threshold": 3.4698125954198473,
+            "checkType": "<",
+            "tags": ""
+        },
+        {
+            "ruleName": "LongDownPeakRatio0",
+            "threshold": 0.8030942857142858,
+            "checkType": ">",
+            "tags": ""
+        },
+        {
+            "ruleName": "LongUpPeakRatio0",
+            "threshold": 3.4698125954198473,
+            "checkType": "<",
+            "tags": ""
+        },
+        {
+            "ruleName": "LongUpPeakRatio0",
+            "threshold": 0.8030942857142858,
+            "checkType": ">",
+            "tags": ""
+        },
+        {
+            "ruleName": "LongUpDownPeakRatio0",
+            "threshold": 3.4698125954198473,
+            "checkType": "<",
+            "tags": ""
+        },
+        {
+            "ruleName": "LongUpDownPeakRatio0",
+            "threshold": 0.8030942857142858,
+            "checkType": ">",
+            "tags": ""
+        },
+        {
+            "ruleName": "SmallLongRatio0",
+            "threshold": 3.4698125954198473,
+            "checkType": "<",
+            "tags": ""
+        },
+        {
+            "ruleName": "SmallLongRatio0",
+            "threshold": 0.8030942857142858,
+            "checkType": ">",
+            "tags": ""
+        },
+        {
+            "ruleName": "SmallLongRatio1",
+            "threshold": 3.4698125954198473,
+            "checkType": "<",
+            "tags": ""
+        },
+        {
+            "ruleName": "SmallLongRatio1",
+            "threshold": 0.8030942857142858,
+            "checkType": ">",
+            "tags": ""
+        },
+        {
+            "ruleName": "SmallLongRatio2",
+            "threshold": 3.4698125954198473,
+            "checkType": "<",
+            "tags": ""
+        },
+        {
+            "ruleName": "SmallLongRatio2",
+            "threshold": 0.8030942857142858,
+            "checkType": ">",
+            "tags": ""
         }
     ]
 }

@@ -180,13 +180,13 @@ class CandleDataList:
     def __init__(self):
         self.candleStickDataList = []
         self.peaks = PeakList(0.03)
-        self.longPeaks = PeakList(0.08)
+        self.longPeaks = PeakList(0.125)
 
     def feed(self, jsonIn):
         self.peaks = PeakList(0.03)
-        #self.longPeaks = PeakList(0.08)
+        self.longPeaks = PeakList(0.125)
         self.feedPeaks(jsonIn, self.peaks)
-        #self.feedPeaks(jsonIn, self.longPeaks)
+        self.feedPeaks(jsonIn, self.longPeaks)
     def feedPeaks(self, jsonIn, peakList):
         self.candleStickDataList = []
         for candleStick in jsonIn:

@@ -3,7 +3,7 @@ import Peaks
 
 PeakFeatureCount = 6
 MaximumSampleSizeFromPattern = 100000
-MaximumSampleSizeFromGoodPattern = 6
+MaximumSampleSizeFromGoodPattern = 3
 TransactionCountPerSecBase = 3
 TransactionLimitPerSecBase = 0.1
 TotalPowerLimit = 0.5
@@ -240,7 +240,7 @@ class TransactionPattern:
 
     def SetPeaks(self, curPrice, curTime, candleSticks, dataList ):
         peakListAndTimeList = candleSticks.GetPeaks(curPrice, curTime, dataList, False)
-        #longPeakListAndTimeList = candleSticks.GetPeaks(curPrice, curTime, dataList, True)
+        longPeakListAndTimeList = candleSticks.GetPeaks(curPrice, curTime, dataList, True)
         self.netPriceList = [curPrice / candleSticks.GetPrice(curTime, 60*60),
                              curPrice / candleSticks.GetPrice(curTime, 60 * 60 * 8),
                              curPrice / candleSticks.GetPrice(curTime, 60*60*24),
@@ -251,6 +251,14 @@ class TransactionPattern:
         self.peaks = peakListAndTimeList[0][-10:]
         self.timeList = peakListAndTimeList[1][-10:]
         self.priceList = peakListAndTimeList[2][-10:]
+
+        self.longPeaks = longPeakListAndTimeList[0][-10:]
+        self.longTimeList = longPeakListAndTimeList[1][-10:]
+        self.longPrices = longPeakListAndTimeList[2][-10:]
+
+        if len(self.longTimeList) < 5:
+            self.timeList = self.timeList[:2]
+
         return peakListAndTimeList[4]
 
     def Append(self, dataList, averageVolume, peakTime, jumpPrice, marketState):
@@ -365,9 +373,36 @@ class TransactionPattern:
         returnList.append(upPeakRatioLast/downPeakRatioLast)
         ruleList.SetIndex(AP.AdjustableParameter.DownPeakRatio1, index)
         index += 1
+        ###########
         downPeakRatioLast1 = self.priceList[-5] / self.priceList[-7]
         upPeakRatioLast1 = self.priceList[-4] / self.priceList[-6]
-        #returnList.append(upPeakRatioLast1)
+        returnList.append(downPeakRatioLast1)
+        returnList.append(upPeakRatioLast1)
+        returnList.append(upPeakRatioLast / downPeakRatioLast)
+        #################################
+        returnList.append(self.longPeaks[-1])
+        returnList.append(self.longPeaks[-2])
+        returnList.append(self.longPeaks[-3])
+        returnList.append(self.longPeaks[-4])
+        returnList.append(self.longPeaks[-5])
+        returnList.append(self.longTimeList[-1])
+        returnList.append(self.longTimeList[-2])
+        returnList.append(self.longTimeList[-3])
+
+
+        downPeakRatioLast = self.longPrices[-3] / self.longPrices[-5]
+        upPeakRatioLast = self.longPrices[-2] / self.longPrices[-4]
+        returnList.append(downPeakRatioLast)
+        returnList.append(upPeakRatioLast)
+        returnList.append(upPeakRatioLast / downPeakRatioLast)
+
+        downPeakRatioLast = self.longPrices[-2] / self.priceList[-2]
+        upPeakRatioLast = self.longPrices[-3] / self.priceList[-3]
+        returnList.append(downPeakRatioLast)
+        returnList.append(upPeakRatioLast)
+        returnList.append(self.longPrices[-4] / self.priceList[-4])
+
+
         #ruleList.SetIndex(AP.AdjustableParameter.UpPeakRatio1, index)
         #index += 1
         return returnList
