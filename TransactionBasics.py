@@ -3,7 +3,7 @@ import Peaks
 
 PeakFeatureCount = 6
 MaximumSampleSizeFromPattern = 100000
-MaximumSampleSizeFromGoodPattern = 3
+MaximumSampleSizeFromGoodPattern = 5
 TransactionCountPerSecBase = 3
 TransactionLimitPerSecBase = 0.1
 TotalPowerLimit = 0.5
@@ -247,6 +247,8 @@ class TransactionPattern:
                              curPrice / candleSticks.GetPrice(curTime, 60*60*24*10)]
 
         self.jumpCountList = [candleSticks.CountPeaks(curTime, 60*10), candleSticks.CountPeaks(curTime, 60*60), candleSticks.CountPeaks(curTime, 60*60*12)]
+        self.jumpCountList2 = [candleSticks.CountPeaks(curTime, 60 * 60 * 6, True), candleSticks.CountPeaks(curTime, 60 * 60 * 24, True),
+                              candleSticks.CountPeaks(curTime, 60 * 60 * 72, True)]
 
         self.peaks = peakListAndTimeList[0][-10:]
         self.timeList = peakListAndTimeList[1][-10:]
@@ -401,7 +403,6 @@ class TransactionPattern:
         returnList.append(downPeakRatioLast)
         returnList.append(upPeakRatioLast)
         returnList.append(self.longPrices[-4] / self.priceList[-4])
-
 
         #ruleList.SetIndex(AP.AdjustableParameter.UpPeakRatio1, index)
         #index += 1

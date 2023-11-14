@@ -18,6 +18,9 @@ from sklearn.feature_selection import SelectKBest, f_classif
 from sklearn.feature_selection import SelectFromModel
 from sklearn.tree import DecisionTreeClassifier, export_graphviz
 from sklearn.metrics import f1_score, make_scorer
+from sklearn.ensemble import GradientBoostingClassifier
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.ensemble import ExtraTreesClassifier
 
 import SuddenChangeTransactions
 import TransactionBasics
@@ -51,7 +54,7 @@ if not IsDecisionTree:
     }
 else:
     parameter_space = {
-        'max_depth': [ 25],
+        'max_depth': [ 35],
         'min_samples_split': [100],
         'min_samples_leaf': [25]
     }
@@ -107,7 +110,7 @@ def Learn():
     inputTransform = None
 
     if IsDecisionTree:
-        mlpTransaction = DecisionTreeClassifier()
+        mlpTransaction = RandomForestClassifier()
     else:
         mlpTransaction = MLPClassifier(hidden_layer_sizes=(24, 24, 24), activation='relu',
                                       solver='adam', learning_rate='adaptive', alpha=0.001, max_iter=500)

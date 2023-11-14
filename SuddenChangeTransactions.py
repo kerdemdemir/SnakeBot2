@@ -56,7 +56,7 @@ class EliminatedList:
 eliminatedList = EliminatedList()
 
 class SuddenChangeHandler:
-    def __init__(self, jsonIn, transactionParam,marketState, fileName, isExtra):
+    def __init__(self, jsonIn, transactionParam,marketState, fileName, isTest):
         self.marketState = marketState
         self.jumpTimeInSeconds = 0
         self.reportTimeInSeconds = 0
@@ -75,7 +75,7 @@ class SuddenChangeHandler:
         self.smallestStrikeCount = 1000
         self.bestPattern = None
         self.averageVolume = 0.0
-        self.isExtraData =  isExtra
+        self.isTest =  isTest
         if self.__Parse(jsonIn) == -1:
             return
 
@@ -201,9 +201,9 @@ class SuddenChangeHandler:
         if len(self.patternList) == 0:
             self.dataList.reverse()
 
-        limit = 0
-        if AP.IsTeaching or AP.IsMachineLearning:
-            limit = TransactionBasics.MaximumSampleSizeFromGoodPattern
+        limit = TransactionBasics.MaximumSampleSizeFromGoodPattern
+        if self.isTest:
+            limit = 1
         if len(self.patternList) > limit:
             self.patternList = sorted(self.patternList, key=lambda x: int(x.lastPrice))[:TransactionBasics.MaximumSampleSizeFromGoodPattern]
 
@@ -481,10 +481,10 @@ class SuddenChangeMerger:
         print("Alert2: ")
 
 
-    def AddFile(self, jsonIn, fileName):
+    def AddFile(self, jsonIn, fileName, isTest):
         tempHandlers = []
         if isinstance(jsonIn, dict):
-            handler = SuddenChangeHandler(jsonIn, self.transactionParam, self.marketState, fileName, True)
+            handler = SuddenChangeHandler(jsonIn, self.transactionParam, self.marketState, fileName, isTest)
             return [handler]
         else:
             for index in range(len(jsonIn)):
@@ -493,7 +493,7 @@ class SuddenChangeMerger:
 
                 jsonPeakTrans = jsonIn[index]
 
-                handler = SuddenChangeHandler(jsonPeakTrans,self.transactionParam,self.marketState,fileName, False)
+                handler = SuddenChangeHandler(jsonPeakTrans,self.transactionParam,self.marketState,fileName, isTest)
                 tempHandlers.append(handler)
             return tempHandlers
 
@@ -666,7 +666,7 @@ class SuddenChangeManager:
         #print("Reading file: ", fileName)
         jsonDictionary = json.load(file)
         index = 1 if self.isTest else 0
-        handlerList = self.suddenChangeMergerList[index].AddFile(jsonDictionary, fileName)
+        handlerList = self.suddenChangeMergerList[index].AddFile(jsonDictionary, fileName, self.isTest)
         for peak in handlerList:
             self.suddenChangeMergerList[index].MergeInTransactions(peak)
             del peak

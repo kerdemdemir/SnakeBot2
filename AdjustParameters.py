@@ -3,7 +3,7 @@ import numpy as np
 import json
 from datetime import datetime
 
-IsTeaching = True
+IsTeaching = False
 IsTraining = not IsTeaching
 IsMachineLearning = IsTraining
 IsShortTerm = False
