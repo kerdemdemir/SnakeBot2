@@ -19,6 +19,7 @@ import time
 
 PeakFeatureCount = TransactionBasics.PeakFeatureCount
 percent = 0.01
+IsMultiThreaded = True
 IsOneFileOnly = False
 totalCounter = 0
 rules = AP.RuleList()
