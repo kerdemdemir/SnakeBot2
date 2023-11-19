@@ -185,9 +185,9 @@ class SuddenChangeHandler:
         # print(lenArray, self.dataList)
         maxTradeVal = 0
         for x in range(lenArray):
-            curTimeInSeconds = self.dataList[x].timeInSecs
-            if  curTimeInSeconds > self.reportTimeInSeconds+10:
-                continue
+            #curTimeInSeconds = self.dataList[x].timeInSecs
+            #if  curTimeInSeconds > self.reportTimeInSeconds+10:
+            #    continue
             lastTotalTradePower = self.dataList[x].totalBuy + self.dataList[x].totalSell
             if lastTotalTradePower > maxTradeVal:
                 maxTradeVal = lastTotalTradePower
@@ -196,13 +196,17 @@ class SuddenChangeHandler:
             self.dataList.reverse()
 
         limit = TransactionBasics.MaximumSampleSizeFromGoodPattern
+        badLimit = TransactionBasics.MaximumSampleSizeFromPattern
+
         if self.isTest:
             limit = 1
+            badLimit = 1
         if len(self.patternList) > limit:
             self.patternList = sorted(self.patternList, key=lambda x: int(x.lastPrice))[:limit]
 
-        if len(self.badPatternList) > TransactionBasics.MaximumSampleSizeFromPattern:
-            randomSampleList = random.sample(self.badPatternList, TransactionBasics.MaximumSampleSizeFromPattern-1)
+
+        if len(self.badPatternList) > badLimit:
+            randomSampleList = random.sample(self.badPatternList, badLimit)
             self.badPatternList = randomSampleList
 
         if len(self.badPatternList) == 0 and len(self.patternList) == 0 :

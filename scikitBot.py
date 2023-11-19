@@ -16,6 +16,8 @@ from sklearn.model_selection import GridSearchCV
 from sklearn.decomposition import PCA
 from sklearn.feature_selection import SelectKBest, f_classif
 from sklearn.feature_selection import SelectFromModel
+from sklearn.impute import SimpleImputer
+
 from sklearn.tree import DecisionTreeClassifier, export_graphviz
 from sklearn.metrics import f1_score, make_scorer
 from sklearn.ensemble import GradientBoostingClassifier
@@ -69,8 +71,11 @@ parameterHeaders = ["TotalCount0", "TotalBuyPower0", "TotalSellPower0", "Price0"
                     "DownPeak1", "UpPeak1", "UpPeakRatio1", "LongPeak1",
                     "LongPeak2", "LongPeak3", "LongPeak4", "LongPeak5",
                     "LongTime1", "LongTime2", "LongTime3", "LongDownPeakRatio0",
-                    "LongUpPeakRatio0", "LongUpDownPeakRatio0", "SmallLongRatio0", "SmallLongRatio1", "SmallLongRatio2"
+                    "LongUpPeakRatio0", "LongUpDownPeakRatio0", "SmallLongRatio0", "SmallLongRatio1", "SmallLongRatio2",
+                    "BuyWall", "SellWall", "BuyLongWall", "SellLongWall",
+                    "BuyWallRatio", "SellWallRatio", "BuyLongWallRatio", "SellLongWallRatio"
                     ]
+
 
 extraHeaders =[]
 def Predict( messageChangeTimeTransactionStrList):
@@ -133,6 +138,9 @@ def Learn():
 
     feature_names = parameterHeaders+extraHeaders
     numpyArr = suddenChangeManager.toTransactionFeaturesNumpy(False)
+    imputer = SimpleImputer(missing_values=np.nan, strategy='mean')
+    numpyArr = imputer.fit_transform(numpyArr)
+
     y = suddenChangeManager.toTransactionResultsNumpy(False)
     X = numpyArr
     if not IsDecisionTree:
@@ -229,28 +237,16 @@ def Learn():
     #X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.05, random_state=40)
 
     if isUseTest:
+
+        thresholds = np.arange(0.3, 0.91, 0.03)
+
         predict_test = mlpTransaction.predict_proba(X_test)
-        finalResult = predict_test[:, 1] >= 0.5
-        returnResult = confusion_matrix(y_test, finalResult)
-        print("50 ", returnResult)
 
-        finalResult = predict_test[:, 1] >= 0.6
-        returnResult = confusion_matrix(y_test, finalResult)
-        print("60 ", returnResult)
+        for threshold in thresholds:
+            finalResult = predict_test[:, 1] >= threshold
+            returnResult = confusion_matrix(y_test, finalResult)
+            print(f"{threshold * 100:.0f} ", returnResult)
 
-        finalResult = predict_test[:, 1] >= 0.7
-        returnResult = confusion_matrix(y_test, finalResult)
-        print("70 ", returnResult)
-
-        finalResult = predict_test[:, 1] >= 0.8
-        returnResult = confusion_matrix(y_test, finalResult)
-        print("80 ", returnResult)
-
-        finalResult = predict_test[:, 1] >= 0.9
-        returnResult = confusion_matrix(y_test, finalResult)
-        print("90 ", returnResult)
-        #print(predict_test)
-        #predict_test = np.delete(finalResult, 0, 1)
 
     print(" Transactions learning done")
 

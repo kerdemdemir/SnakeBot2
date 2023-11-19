@@ -1,8 +1,10 @@
+import numpy as np
+
 import AdjustParameters as AP
 import Peaks
 
 PeakFeatureCount = 6
-MaximumSampleSizeFromPattern = 100000
+MaximumSampleSizeFromPattern = 30
 MaximumSampleSizeFromGoodPattern = 5
 TransactionCountPerSecBase = 3
 TransactionLimitPerSecBase = 0.1
@@ -223,10 +225,16 @@ class TransactionPattern:
         self.longPeaks = []
         self.longTimeList = []
         self.longPrices = []
-        self.buyWall = 0.0
-        self.sellWall = 0.0
-        self.buyLongWall = 0.0
-        self.sellLongWall = 0.0
+        self.buyWall = np.nan
+        self.sellWall = np.nan
+        self.buyLongWall = np.nan
+        self.sellLongWall = np.nan
+
+        self.averageBuyWall = np.nan
+        self.averageSellWall = np.nan
+        self.averageBuyLongWall = np.nan
+        self.averageSellLongWall = np.nan
+
         self.averageVolume = 0.0
 
     def GoalReached(self, timeDiff, goal):
@@ -270,13 +278,18 @@ class TransactionPattern:
             self.marketStateList = marketState.getState(peakTime)
         else:
             self.marketStateList = []
-
-        self.buyWall = dataList[-1].lastBuyWall
-        self.sellWall = dataList[-1].lastSellWall
-        self.buyLongWall = dataList[-1].lastBuyLongWall
-        self.sellLongWall = dataList[-1].lastSellLongWall
         self.averageVolume = averageVolume
 
+        if dataList[-1].lastBuyLongWall != 0.0:
+            self.buyWall = dataList[-1].lastBuyWall
+            self.sellWall = dataList[-1].lastSellWall
+            self.buyLongWall = dataList[-1].lastBuyLongWall
+            self.sellLongWall = dataList[-1].lastSellLongWall
+
+            self.averageBuyWall = dataList[-1].lastBuyWall/dataList[-1].buyWall
+            self.averageSellWall = dataList[-1].lastSellWall/dataList[-1].sellWall
+            self.averageBuyLongWall = dataList[-1].lastBuyLongWall/dataList[-1].buyLongWall
+            self.averageSellLongWall = dataList[-1].lastSellLongWall/dataList[-1].sellLongWall
 
         for elem in dataList:
             self.transactionBuyList.append(elem.transactionBuyCount)
@@ -403,6 +416,25 @@ class TransactionPattern:
         returnList.append(downPeakRatioLast)
         returnList.append(upPeakRatioLast)
         returnList.append(self.longPrices[-4] / self.priceList[-4])
+
+        returnList.append(self.buyWall)
+        returnList.append(self.sellWall)
+        returnList.append(self.buyLongWall)
+        returnList.append(self.sellLongWall)
+        returnList.append(self.buyWall/self.sellWall)
+        returnList.append(self.buyLongWall/self.sellLongWall)
+        returnList.append(self.buyLongWall/self.buyWall)
+        returnList.append(self.sellLongWall/self.sellWall)
+        #returnList.append(self.averageBuyWall)
+        #returnList.append(self.averageSellWall)
+        #returnList.append(self.averageBuyLongWall)
+        #returnList.append(self.averageSellLongWall)
+        #returnList.append(self.buyWall/self.TotalPower(2))
+        #returnList.append(self.sellWall/self.TotalPower(2))
+        #returnList.append(self.buyLongWall/self.TotalPower(2))
+        #returnList.append(self.sellLongWall/self.TotalPower(2))
+
+
 
         #ruleList.SetIndex(AP.AdjustableParameter.UpPeakRatio1, index)
         #index += 1
