@@ -45,6 +45,10 @@ class EliminatedList:
         else:
             self.eliminatedList.append(key)
 
+    def AddEliminatedBool(self, name, isExtra, reportTime):
+        newName = str(name) + str(isExtra)
+        return self.AddEliminated(newName, reportTime)
+
     def IsEliminated(self, name, reportTime):
         key = str(name) + str(reportTime)
         if IsMultiThreaded:
@@ -53,7 +57,19 @@ class EliminatedList:
         else:
             return key in self.eliminatedList
 
+    def IsEliminatedBool(self, name, isExtra, reportTime):
+        if isExtra:
+            newName = str(name) + str(False)
+            if self.IsEliminated(newName, reportTime):
+                print("Alert10")
+                return True
+
+        newName = str(name) + str(isExtra)
+        return self.IsEliminated(newName, reportTime)
+
+
 eliminatedList = EliminatedList()
+eliminatedList2 = EliminatedList()
 
 class SuddenChangeHandler:
     def __init__(self, jsonIn, transactionParam,marketState, fileName, isTest):
@@ -76,6 +92,7 @@ class SuddenChangeHandler:
         self.bestPattern = None
         self.averageVolume = 0.0
         self.isTest =  isTest
+        self.isExtra = fileName.split("/")[-1].startswith("learningSuddenChange_")
         if self.__Parse(jsonIn) == -1:
             return
 
@@ -289,7 +306,8 @@ class SuddenChangeHandler:
         powerLimit = 0.03
         if curPattern.totalBuy + curPattern.totalSell < powerLimit:
             return
-
+        if eliminatedList2.IsEliminatedBool(self.currencyName, self.isExtra, curPattern.endTimeInSecs):
+            return
         pattern = TransactionBasics.TransactionPattern()
 
         if interestTime != 0 and interestTime - curTimeInMiliSecs < 10000 :
@@ -315,6 +333,7 @@ class SuddenChangeHandler:
 
         if len(pattern.timeList) < 7:
             return
+
         pattern.firstToLastRatio = self.dataList[0].firstPrice / lastPrice
         #self.__GetWithTime(jsonIn, curTimeInMiliSecs - 10000, curTimeInMiliSecs, 10)
         firstData = self.__GetWithTime(jsonIn, 0, curTimeInMiliSecs - 610000, curTimeInMiliSecs - 130000, 480)
@@ -399,10 +418,16 @@ class SuddenChangeHandler:
             #if self.isRise:
             #    print("name: ", self.currencyName, " time: ", curTimeInMiliSecs, " curIndex: ", curIndex, " all vals: ", pattern.GetFeatures(rules))
             self.patternList.append(pattern)
+            eliminatedList2.AddEliminatedBool(self.currencyName, self.isExtra, curPattern.endTimeInSecs)
             #print(basePrice, self.currencyName)
         elif category == 2:
             self.badPatternList.append(pattern)
             self.addedCount += 1
+            eliminatedList2.AddEliminatedBool(self.currencyName, self.isExtra, curPattern.endTimeInSecs)
+
+        pattern.isExtra = self.isExtra
+        pattern.patternTime = curPattern.endTimeInSecs
+        pattern.name = self.currencyName
 
     def __GetCategory(self, curIndex, priceIn, pattern):
         if self.isRise:
@@ -414,7 +439,7 @@ class SuddenChangeHandler:
                     return -1
                 if ratio<0.98:
                     isDropped = True
-                if ratio<0.97:
+                if ratio<0.96:
                     return 2
                 if ratio>1.08 and not isDropped:
                     pattern.GoalReached(timeDiff, 1.08)

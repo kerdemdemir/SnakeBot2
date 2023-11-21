@@ -199,7 +199,7 @@ class TransactionPattern:
     def __init__(self):
         self.transactionBuyList = []
         self.transactionSellList = []
-        self.   transactionBuyPowerList = []
+        self.transactionBuyPowerList = []
         self.transactionSellPowerList = []
         self.firstLastPriceList = []
         self.buySellRatio = []
@@ -236,7 +236,9 @@ class TransactionPattern:
         self.averageSellLongWall = np.nan
 
         self.averageVolume = 0.0
-
+        self.isExtra = False
+        self.patternTime = 0
+        self.name = ""
     def GoalReached(self, timeDiff, goal):
         self.timeToJump = timeDiff
 
@@ -425,14 +427,14 @@ class TransactionPattern:
         returnList.append(self.buyLongWall/self.sellLongWall)
         returnList.append(self.buyLongWall/self.buyWall)
         returnList.append(self.sellLongWall/self.sellWall)
-        #returnList.append(self.averageBuyWall)
-        #returnList.append(self.averageSellWall)
-        #returnList.append(self.averageBuyLongWall)
-        #returnList.append(self.averageSellLongWall)
-        #returnList.append(self.buyWall/self.TotalPower(2))
-        #returnList.append(self.sellWall/self.TotalPower(2))
-        #returnList.append(self.buyLongWall/self.TotalPower(2))
-        #returnList.append(self.sellLongWall/self.TotalPower(2))
+        returnList.append(self.averageBuyWall)
+        returnList.append(self.averageSellWall)
+        returnList.append(self.averageBuyLongWall)
+        returnList.append(self.averageSellLongWall)
+        returnList.append(self.buyWall/self.TotalPower(2))
+        returnList.append(self.sellWall/self.TotalPower(2))
+        returnList.append(self.buyLongWall/self.TotalPower(2))
+        returnList.append(self.sellLongWall/self.TotalPower(2))
 
 
 

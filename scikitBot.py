@@ -73,7 +73,9 @@ parameterHeaders = ["TotalCount0", "TotalBuyPower0", "TotalSellPower0", "Price0"
                     "LongTime1", "LongTime2", "LongTime3", "LongDownPeakRatio0",
                     "LongUpPeakRatio0", "LongUpDownPeakRatio0", "SmallLongRatio0", "SmallLongRatio1", "SmallLongRatio2",
                     "BuyWall", "SellWall", "BuyLongWall", "SellLongWall",
-                    "BuyWallRatio", "SellWallRatio", "BuyLongWallRatio", "SellLongWallRatio"
+                    "BuyVsSellWall", "LongBuyVsSellWall", "LongBuyVsBuyWall", "LongSellVsSellWall",
+                    "AverageBuyWallVsWall", "AverageSellWallVsWall", "AverageLongBuyWallVsWall", "AverageLongSellWallVsWall",
+                    "BuyWallVsTransaction", "SellWallVsTransaction", "LongBuyWallVsTransaction", "LongSellWallVsTransaction"
                     ]
 
 
@@ -223,6 +225,7 @@ def Learn():
     del suddenChangeManager
 
     mlpTransaction.fit(X, y)
+
     print("Best parameters:", mlpTransaction.best_params_)
 
     #if IsDecisionTree:
@@ -238,7 +241,7 @@ def Learn():
 
     if isUseTest:
 
-        thresholds = np.arange(0.3, 0.91, 0.03)
+        thresholds = np.arange(0.1, 0.91, 0.03)
 
         predict_test = mlpTransaction.predict_proba(X_test)
 
@@ -247,7 +250,8 @@ def Learn():
             returnResult = confusion_matrix(y_test, finalResult)
             print(f"{threshold * 100:.0f} ", returnResult)
 
-
+    for feature_name, importance in zip(feature_names, mlpTransaction.best_estimator_.feature_importances_):
+        print(f"{feature_name}: {importance}")
     print(" Transactions learning done")
 
     sys.stdout.flush()
