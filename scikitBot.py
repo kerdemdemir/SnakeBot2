@@ -74,7 +74,7 @@ parameterHeaders = ["TotalCount0", "TotalBuyPower0", "TotalSellPower0", "Price0"
                     "LongUpPeakRatio0", "LongUpDownPeakRatio0", "SmallLongRatio0", "SmallLongRatio1", "SmallLongRatio2",
                     "BuyWall", "SellWall", "BuyLongWall", "SellLongWall",
                     "BuyVsSellWall", "LongBuyVsSellWall", "LongBuyVsBuyWall", "LongSellVsSellWall",
-                    "AverageBuyWallVsWall", "AverageSellWallVsWall", "AverageLongBuyWallVsWall", "AverageLongSellWallVsWall",
+                    #"AverageBuyWallVsWall", "AverageSellWallVsWall", "AverageLongBuyWallVsWall", "AverageLongSellWallVsWall",
                     "BuyWallVsTransaction", "SellWallVsTransaction", "LongBuyWallVsTransaction", "LongSellWallVsTransaction"
                     ]
 

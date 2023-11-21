@@ -673,54 +673,6 @@
             "tags": "NoTune"
         },
         {
-            "ruleName": "AverageBuyWallVsWall",
-            "threshold": 0.39936095856215675,
-            "checkType": "<",
-            "tags": "NoTune"
-        },
-        {
-            "ruleName": "AverageBuyWallVsWall",
-            "threshold": 2.167702416052416,
-            "checkType": ">",
-            "tags": "NoTune"
-        },
-        {
-            "ruleName": "AverageSellWallVsWall",
-            "threshold": 0.39936095856215675,
-            "checkType": "<",
-            "tags": "NoTune"
-        },
-        {
-            "ruleName": "AverageSellWallVsWall",
-            "threshold": 2.167702416052416,
-            "checkType": ">",
-            "tags": "NoTune"
-        },
-        {
-            "ruleName": "AverageLongBuyWallVsWall",
-            "threshold": 0.39936095856215675,
-            "checkType": "<",
-            "tags": "NoTune"
-        },
-        {
-            "ruleName": "AverageLongBuyWallVsWall",
-            "threshold": 2.167702416052416,
-            "checkType": ">",
-            "tags": "NoTune"
-        },
-        {
-            "ruleName": "AverageLongSellWallVsWall",
-            "threshold": 0.39936095856215675,
-            "checkType": "<",
-            "tags": "NoTune"
-        },
-        {
-            "ruleName": "AverageLongSellWallVsWall",
-            "threshold": 2.167702416052416,
-            "checkType": ">",
-            "tags": "NoTune"
-        },
-        {
             "ruleName": "BuyWallVsTransaction",
             "threshold": 0.39936095856215675,
             "checkType": "<",
