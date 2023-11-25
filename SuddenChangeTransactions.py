@@ -316,9 +316,12 @@ class SuddenChangeHandler:
             lastPrice,curTimeInMiliSecs,actualEndIndex = self.FindInterestIndexWithPower(curPattern, jsonIn, powerLimit)
 
         isUpOrDownTrend = pattern.SetPeaks(lastPrice, curTimeInMiliSecs//1000, self.candleDataList, self.dataList)
-        if AP.IsTraningUpPeaks and isUpOrDownTrend == Peaks.PriceTrendSide.DOWN:
-            targetUpPrice = pattern.priceList[-2]*1.035
-            if curPattern.lastPrice > targetUpPrice:
+        if AP.IsTraningUpPeaks and (isUpOrDownTrend == Peaks.PriceTrendSide.DOWN or pattern.peaks[-1] < 0.995):
+            if isUpOrDownTrend == Peaks.PriceTrendSide.DOWN:
+                targetUpPrice = pattern.priceList[-2]*1.035
+            else:
+                targetUpPrice = lastPrice * (pattern.peaks[-1]/1.0)
+            if curPattern.maxPrice > targetUpPrice:
                 lastPrice,curTimeInMiliSecs,actualEndIndex  = self.FindInterestIndexWithPrice(curPattern, jsonIn, targetUpPrice)
                 isUpOrDownTrend = pattern.SetPeaks(lastPrice, curTimeInMiliSecs // 1000, self.candleDataList,self.dataList)
                 if isUpOrDownTrend == Peaks.PriceTrendSide.DOWN:
@@ -686,6 +689,9 @@ class SuddenChangeManager:
         if self.isTest or (AP.IsTraining and not AP.IsMachineLearning):
             allJumpFiles = self.GetAllFiles("/Data/TestData/", False)
         allExtraFiles = self.GetAllFiles("/Data/ExtraData/", False)
+        #allJumpFiles = self.GetAllFiles("/Data/TestData/", True)
+        #allExtraFiles = []
+
         allFiles = allJumpFiles
         if not self.isTest:
             allFiles = allJumpFiles + allExtraFiles
