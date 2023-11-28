@@ -373,8 +373,8 @@ class SuddenChangeHandler:
                 return
             k+=2
 
-        if rules.ControlClamp(AP.AdjustableParameter.MaxPowInDetail, pattern.maxDetailBuyPower):
-            return
+        #if rules.ControlClamp(AP.AdjustableParameter.MaxPowInDetail, pattern.maxDetailBuyPower):
+        #    return
 
         if rules.ControlClamp(AP.AdjustableParameter.AverageVolume, pattern.averageVolume):
             return
@@ -394,8 +394,8 @@ class SuddenChangeHandler:
         if rules.ControlClamp(AP.AdjustableParameter.NetPrice168H, pattern.netPriceList[3]):
             return
 
-        if rules.ControlClamp(AP.AdjustableParameter.PeakTime0, pattern.timeList[-1]):
-            return
+        #if rules.ControlClamp(AP.AdjustableParameter.PeakTime0, pattern.timeList[-1]):
+        #    return
         if rules.ControlClamp(AP.AdjustableParameter.PeakTime1, pattern.timeList[-2]):
             return
         if rules.ControlClamp(AP.AdjustableParameter.PeakTime2, pattern.timeList[-3]):
@@ -698,7 +698,7 @@ class SuddenChangeManager:
             allFiles = allJumpFiles + allExtraFiles
         if IsMultiThreaded:
             lock = multiprocessing.Lock()
-            pool_obj = multiprocessing.Pool(initializer=init_pool_processes, initargs=(lock,), processes=32,maxtasksperchild=500)
+            pool_obj = multiprocessing.Pool(initializer=init_pool_processes, initargs=(lock,), processes=8,maxtasksperchild=50)
             pool_obj.map(self.ReadFile, allFiles)
         else:
             for fileName in allFiles:

@@ -329,7 +329,7 @@ class TransactionPattern:
 
         index = len(self.transactionBuyList)*4
 
-        returnList.append(self.maxDetailBuyPower)
+        returnList.append(self.TotalPower(2)/self.averageVolume)
         ruleList.SetIndex(AP.AdjustableParameter.MaxPowInDetail, index)
         index += 1
 
@@ -357,7 +357,7 @@ class TransactionPattern:
         returnList.append(self.netPriceList[3])
         ruleList.SetIndex(AP.AdjustableParameter.NetPrice168H, index)
         index += 1
-        returnList.append(self.timeList[-1])
+        returnList.append(self.timeList[-4])
         ruleList.SetIndex(AP.AdjustableParameter.PeakTime0, index)
         index += 1
         returnList.append(self.timeList[-2])
