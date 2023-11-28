@@ -241,7 +241,7 @@ def Learn():
 
     if isUseTest:
 
-        thresholds = np.arange(0.1, 0.91, 0.03)
+        thresholds = np.arange(0.1, 0.61, 0.01)
 
         predict_test = mlpTransaction.predict_proba(X_test)
 

@@ -19,7 +19,7 @@ import time
 
 PeakFeatureCount = TransactionBasics.PeakFeatureCount
 percent = 0.01
-IsMultiThreaded = True
+IsMultiThreaded = False
 IsOneFileOnly = False
 totalCounter = 0
 rules = AP.RuleList()
@@ -61,7 +61,6 @@ class EliminatedList:
         if isExtra:
             newName = str(name) + str(False)
             if self.IsEliminated(newName, reportTime):
-                print("Alert10")
                 return True
 
         newName = str(name) + str(isExtra)
@@ -339,9 +338,9 @@ class SuddenChangeHandler:
 
         pattern.firstToLastRatio = self.dataList[0].firstPrice / lastPrice
         #self.__GetWithTime(jsonIn, curTimeInMiliSecs - 10000, curTimeInMiliSecs, 10)
-        firstData = self.__GetWithTime(jsonIn, 0, curTimeInMiliSecs - 610000, curTimeInMiliSecs - 130000, 480)
-        secondData = self.__GetWithTime(jsonIn, firstData.endIndex - 1, curTimeInMiliSecs - 130000, curTimeInMiliSecs - 10000, 120)
-        lastData = self.__GetWithTime(jsonIn, secondData.endIndex - 1, curTimeInMiliSecs - 10000, curTimeInMiliSecs, 10)
+        firstData = self.__GetWithTime(jsonIn, 0, curTimeInMiliSecs - 900000, curTimeInMiliSecs - 380000, 520)
+        secondData = self.__GetWithTime(jsonIn, firstData.endIndex - 1, curTimeInMiliSecs - 380000, curTimeInMiliSecs - 60000, 320)
+        lastData = self.__GetWithTime(jsonIn, secondData.endIndex - 1, curTimeInMiliSecs - 60000, curTimeInMiliSecs, 60)
         dataRange = [firstData, secondData, lastData]
 
         basePrice = lastPrice
@@ -621,6 +620,8 @@ class SuddenChangeManager:
         if AP.IsTeaching:
             for i in range(1000):
                 self.suddenChangeMergerList = []
+                for _ in range(len(eliminatedList2.eliminatedList)):
+                    eliminatedList2.eliminatedList.pop()
                 self.CreateSuddenChangeMergers()
                 self.FeedChangeMergers()
                 self.suddenChangeMergerList[0].Finalize(True)
