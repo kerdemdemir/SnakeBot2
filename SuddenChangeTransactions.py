@@ -298,7 +298,7 @@ class SuddenChangeHandler:
         curPattern = self.dataList[curIndex]
         curTimeInMiliSecs = jsonIn[curPattern.endIndex]["T"]
         interestTime = 0
-        #if interestTime - curTimeInMiliSecs < 10000 and self.currencyName == "MBOX" and self.isRise and curIndex > 380:
+        #if interestTime - curTimeInMiliSecs < 10000 and self.currencyName == "IOTA" and self.isRise:
         #    print("Alert")
         if startBin < 0:
             return
@@ -310,16 +310,14 @@ class SuddenChangeHandler:
         pattern = TransactionBasics.TransactionPattern()
 
         if interestTime != 0 and interestTime - curTimeInMiliSecs < 10000 :
-            lastPrice,curTimeInMiliSecs,actualEndIndex = self.FindInterestIndexWithTime(curPattern, jsonIn, powerLimit)
+            lastPrice,curTimeInMiliSecs,actualEndIndex = self.FindInterestIndexWithTime(curPattern, jsonIn, interestTime)
         else:
             lastPrice,curTimeInMiliSecs,actualEndIndex = self.FindInterestIndexWithPower(curPattern, jsonIn, powerLimit)
 
         isUpOrDownTrend = pattern.SetPeaks(lastPrice, curTimeInMiliSecs//1000, self.candleDataList, self.dataList)
-        if AP.IsTraningUpPeaks and (isUpOrDownTrend == Peaks.PriceTrendSide.DOWN or pattern.peaks[-1] < 0.995):
+        if AP.IsTraningUpPeaks and isUpOrDownTrend == Peaks.PriceTrendSide.DOWN:
             if isUpOrDownTrend == Peaks.PriceTrendSide.DOWN:
-                targetUpPrice = pattern.priceList[-2]*1.035
-            else:
-                targetUpPrice = lastPrice * (pattern.peaks[-1]/1.0)
+                targetUpPrice = pattern.priceList[-2] * 1.032
             if curPattern.maxPrice > targetUpPrice:
                 lastPrice,curTimeInMiliSecs,actualEndIndex  = self.FindInterestIndexWithPrice(curPattern, jsonIn, targetUpPrice)
                 isUpOrDownTrend = pattern.SetPeaks(lastPrice, curTimeInMiliSecs // 1000, self.candleDataList,self.dataList)
@@ -331,7 +329,14 @@ class SuddenChangeHandler:
             return
 
         if pattern.peaks[-1] < 0.995:
-           return
+            targetTime = curPattern.maxTimeInSecs*1000
+            lastPrice, curTimeInMiliSecs, actualEndIndex = self.FindInterestIndexWithTime(curPattern, jsonIn,
+                                                                                          targetTime)
+            pattern.SetPeaks(lastPrice, curTimeInMiliSecs // 1000, self.candleDataList, self.dataList)
+            if pattern.peaks[-1] < 0.995:
+                return
+            #else:
+            #    print("Recovered")
 
         if len(pattern.timeList) < 7:
             return
@@ -353,7 +358,7 @@ class SuddenChangeHandler:
             return
         pattern.SetDetailedTransaction(lastMiniData)
         actualAvarageVolume = self.CalculateActualVolume(jsonIn, actualEndIndex, curTimeInMiliSecs)
-        pattern.Append( dataRange, actualAvarageVolume, self.jumpTimeInSeconds, self.jumpPrice, self.marketState)
+        pattern.Append( dataRange, lastMiniData, actualAvarageVolume, self.jumpTimeInSeconds, self.jumpPrice, self.marketState)
         if pattern.marketStateList[1] > 6:
             return
 
@@ -443,8 +448,8 @@ class SuddenChangeHandler:
                     isDropped = True
                 if ratio<0.96:
                     return 2
-                if ratio>1.08 and not isDropped:
-                    pattern.GoalReached(timeDiff, 1.08)
+                if ratio>1.07 and not isDropped:
+                    pattern.GoalReached(timeDiff, 1.07)
                     return 1
             return -1
         else:
@@ -698,7 +703,7 @@ class SuddenChangeManager:
             allFiles = allJumpFiles + allExtraFiles
         if IsMultiThreaded:
             lock = multiprocessing.Lock()
-            pool_obj = multiprocessing.Pool(initializer=init_pool_processes, initargs=(lock,), processes=8,maxtasksperchild=50)
+            pool_obj = multiprocessing.Pool(initializer=init_pool_processes, initargs=(lock,), processes=16,maxtasksperchild=100)
             pool_obj.map(self.ReadFile, allFiles)
         else:
             for fileName in allFiles:
