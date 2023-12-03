@@ -57,8 +57,8 @@ if not IsDecisionTree:
 else:
     parameter_space = {
         'max_depth': [ 35],
-        'min_samples_split': [100],
-        'min_samples_leaf': [25]
+        'min_samples_split': [75],
+        'min_samples_leaf': [15]
     }
 suddenChangeManager = SuddenChangeTransactions.SuddenChangeManager(transParamList)
 
