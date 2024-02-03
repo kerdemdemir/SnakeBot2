@@ -84,9 +84,9 @@ class SuddenChangeHandler:
         self.isRise = False
         self.candleDataList = Peaks.CandleDataList()
         self.transactionParam = transactionParam
-        self.patternList = List[Features.Features]
-        self.mustBuyList = List[Features.Features]
-        self.badPatternList = List[Features.Features]
+        self.patternList: List[Features.Features] = []
+        self.mustBuyList: List[Features.Features] = []
+        self.badPatternList: List[Features.Features] = []
         self.addedCount  = 0
         self.isAfterBuyRecord = fileName.split("/")[-1].startswith("Positive")
         self.smallestStrikeCount = 1000
@@ -453,14 +453,14 @@ class SuddenChangeHandler:
                 if ratio<0.97:
                     return 2
                 if ratio>1.07 and not isDropped:
-                    pattern.GoalReached(timeDiff, 1.07)
+                    pattern.GoalReached(timeDiff)
                     return 1
             return -1
         else:
             for i in range(curIndex, len(self.dataList)):
                 timeDiff = self.dataList[i].endTimeInSecs - self.dataList[curIndex].endTimeInSecs
                 if self.dataList[i].lastPrice/priceIn<0.99:
-                    pattern.GoalReached(timeDiff, 1.025)
+                    pattern.GoalReached(timeDiff)
                     return 2
                 if timeDiff > 900:
                     if self.dataList[i].lastPrice/priceIn > 1.005:
