@@ -363,7 +363,7 @@ class SuddenChangeHandler:
         features.Append( dataRange, actualAvarageVolume, self.jumpTimeInSeconds, self.jumpPrice)
 
         if self.marketState:
-            if self.marketState.getState(self.jumpTimeInSeconds) > 6:
+            if self.marketState.getState(self.jumpTimeInSeconds)[1] > 6:
                 return
 
         k = 0
