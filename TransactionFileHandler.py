@@ -1,13 +1,7 @@
 import json
-from builtins import list
 from datetime import datetime
 import bisect
 import copy
-import numpy as np
-import os
-from os import listdir
-from os.path import isfile, join
-import MarketStateManager
 import TransactionBasics
 import random
 import AdjustParameters as AP
@@ -450,14 +444,14 @@ class FileHandler:
                 if ratio < 0.97:
                     return 2
                 if ratio > 1.07 and not isDropped:
-                    pattern.GoalReached(timeDiff, 1.07)
+                    pattern.GoalReached(timeDiff)
                     return 1
             return -1
         else:
             for i in range(curIndex, len(self.dataList)):
                 timeDiff = self.dataList[i].endTimeInSecs - self.dataList[curIndex].endTimeInSecs
                 if self.dataList[i].lastPrice / priceIn < 0.99:
-                    pattern.GoalReached(timeDiff, 1.025)
+                    pattern.GoalReached(timeDiff)
                     return 2
                 if timeDiff > 900:
                     if self.dataList[i].lastPrice / priceIn > 1.005:
