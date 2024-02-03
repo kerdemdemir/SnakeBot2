@@ -22,6 +22,7 @@ import time
 PeakFeatureCount = TransactionBasics.PeakFeatureCount
 percent = 0.01
 IsOneFileOnly = False
+IsMultiThreaded = False
 totalCounter = 0
 rules = AP.RuleList()
 
@@ -362,7 +363,7 @@ class SuddenChangeHandler:
         features.Append( dataRange, actualAvarageVolume, self.jumpTimeInSeconds, self.jumpPrice)
 
         if self.marketState:
-            if self.marketState[1] > 6:
+            if self.marketState.getState(self.jumpTimeInSeconds) > 6:
                 return
 
         k = 0
