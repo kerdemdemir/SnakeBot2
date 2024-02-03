@@ -14,12 +14,13 @@ import AdjustParameters as AP
 import sys
 import multiprocessing
 import Peaks
+import Features
+from typing import List
 
 import time
 
 PeakFeatureCount = TransactionBasics.PeakFeatureCount
 percent = 0.01
-IsMultiThreaded = False
 IsOneFileOnly = False
 totalCounter = 0
 rules = AP.RuleList()
@@ -82,9 +83,9 @@ class SuddenChangeHandler:
         self.isRise = False
         self.candleDataList = Peaks.CandleDataList()
         self.transactionParam = transactionParam
-        self.patternList = []
-        self.mustBuyList = []
-        self.badPatternList = []
+        self.patternList = List[Features.Features]
+        self.mustBuyList = List[Features.Features]
+        self.badPatternList = List[Features.Features]
         self.addedCount  = 0
         self.isAfterBuyRecord = fileName.split("/")[-1].startswith("Positive")
         self.smallestStrikeCount = 1000
@@ -207,7 +208,7 @@ class SuddenChangeHandler:
             lastTotalTradePower = self.dataList[x].totalBuy + self.dataList[x].totalSell
             if lastTotalTradePower > maxTradeVal:
                 maxTradeVal = lastTotalTradePower
-            self.__AppendToPatternListImpl(self.transactionParam.gramCount, x, lenArray, jsonIn)
+            self.__AppendToPatternListImpl(x, lenArray, jsonIn)
         if len(self.patternList) == 0:
             self.dataList.reverse()
 
@@ -290,7 +291,7 @@ class SuddenChangeHandler:
         lastTimeInSeconds = int(jsonIn[-1]["T"]) // 1000
         timeDiffInSeconds = (lastTimeInSeconds - curTimeInMiliSecs//1000)
         return (self.averageVolume * 60 * 60 * 6 - restPowerSum)/(60 * 60 * 6 - timeDiffInSeconds)
-    def __AppendToPatternListImpl(self, ngramCount, curIndex, lenArray, jsonIn):
+    def __AppendToPatternListImpl(self, curIndex, lenArray, jsonIn):
         totalCount = 30
         startBin = curIndex + 1 - totalCount
         if curIndex > lenArray:
@@ -307,20 +308,20 @@ class SuddenChangeHandler:
             return
         if eliminatedList2.IsEliminatedBool(self.currencyName, self.isExtra, curPattern.endTimeInSecs):
             return
-        pattern = TransactionBasics.TransactionPattern()
+        features = Features.Features()
 
         if interestTime != 0 and interestTime - curTimeInMiliSecs < 10000 :
             lastPrice,curTimeInMiliSecs,actualEndIndex = self.FindInterestIndexWithTime(curPattern, jsonIn, interestTime)
         else:
             lastPrice,curTimeInMiliSecs,actualEndIndex = self.FindInterestIndexWithPower(curPattern, jsonIn, powerLimit)
 
-        isUpOrDownTrend = pattern.SetPeaks(lastPrice, curTimeInMiliSecs//1000, self.candleDataList, self.dataList)
+        isUpOrDownTrend = features.SetPeaks(lastPrice, curTimeInMiliSecs//1000, self.candleDataList, self.dataList)
         if AP.IsTraningUpPeaks and isUpOrDownTrend == Peaks.PriceTrendSide.DOWN:
             if isUpOrDownTrend == Peaks.PriceTrendSide.DOWN:
-                targetUpPrice = pattern.priceList[-2] * 1.032
+                targetUpPrice = features.priceList[-2] * 1.032
             if curPattern.maxPrice > targetUpPrice:
                 lastPrice,curTimeInMiliSecs,actualEndIndex  = self.FindInterestIndexWithPrice(curPattern, jsonIn, targetUpPrice)
-                isUpOrDownTrend = pattern.SetPeaks(lastPrice, curTimeInMiliSecs // 1000, self.candleDataList,self.dataList)
+                isUpOrDownTrend = features.SetPeaks(lastPrice, curTimeInMiliSecs // 1000, self.candleDataList,self.dataList)
                 if isUpOrDownTrend == Peaks.PriceTrendSide.DOWN:
                     return
             else:
@@ -328,20 +329,20 @@ class SuddenChangeHandler:
         if not AP.IsTraningUpPeaks and isUpOrDownTrend == Peaks.PriceTrendSide.UP:
             return
 
-        if pattern.peaks[-1] < 0.995:
+        if features.peaks[-1] < 0.995:
             targetTime = curPattern.maxTimeInSecs*1000
             lastPrice, curTimeInMiliSecs, actualEndIndex = self.FindInterestIndexWithTime(curPattern, jsonIn,
                                                                                           targetTime)
-            pattern.SetPeaks(lastPrice, curTimeInMiliSecs // 1000, self.candleDataList, self.dataList)
-            if pattern.peaks[-1] < 0.995:
+            features.SetPeaks(lastPrice, curTimeInMiliSecs // 1000, self.candleDataList, self.dataList)
+            if features.peaks[-1] < 0.995:
                 return
             #else:
             #    print("Recovered")
 
-        if len(pattern.timeList) < 7:
+        if len(features.timeList) < 7:
             return
 
-        pattern.firstToLastRatio = self.dataList[0].firstPrice / lastPrice
+        features.firstToLastRatio = self.dataList[0].firstPrice / lastPrice
         #self.__GetWithTime(jsonIn, curTimeInMiliSecs - 10000, curTimeInMiliSecs, 10)
         firstData = self.__GetWithTime(jsonIn, 0, curTimeInMiliSecs - 900000, curTimeInMiliSecs - 380000, 520)
         secondData = self.__GetWithTime(jsonIn, firstData.endIndex - 1, curTimeInMiliSecs - 380000, curTimeInMiliSecs - 60000, 320)
@@ -349,92 +350,94 @@ class SuddenChangeHandler:
         dataRange = [firstData, secondData, lastData]
 
         basePrice = lastPrice
-        pattern.lastPrice = lastPrice
+        features.lastPrice = lastPrice
 
-        pattern.timeToJump = self.reportTimeInSeconds - self.dataList[curIndex].timeInSecs
+        features.timeToJump = self.reportTimeInSeconds - self.dataList[curIndex].timeInSecs
 
         lastMiniData = self.__GetWithTime(jsonIn, secondData.endIndex - 1, curTimeInMiliSecs - 1000, curTimeInMiliSecs, 1)
         if lastMiniData.totalBuy < 0.004:
             return
-        pattern.SetDetailedTransaction(lastMiniData)
+        features.SetDetailedTransaction(lastMiniData)
         actualAvarageVolume = self.CalculateActualVolume(jsonIn, actualEndIndex, curTimeInMiliSecs)
-        pattern.Append( dataRange, lastMiniData, actualAvarageVolume, self.jumpTimeInSeconds, self.jumpPrice, self.marketState)
-        if pattern.marketStateList[1] > 6:
-            return
+        features.Append( dataRange, actualAvarageVolume, self.jumpTimeInSeconds, self.jumpPrice)
+
+        if self.marketState:
+            if self.marketState[1] > 6:
+                return
 
         k = 0
         rules.strikeCount = 0
-        for i in range(len(pattern.transactionBuyList)):
-            if rules.ControlClampIndex(k,pattern.transactionBuyList[i]+pattern.transactionSellList[i]):
+        for i in range(len(features.transactionBuyList)):
+            if rules.ControlClampIndex(k,features.transactionBuyList[i]+features.transactionSellList[i]):
                 return
             k+=2
-            if rules.ControlClampIndex(k, pattern.transactionBuyPowerList[i]):
+            if rules.ControlClampIndex(k, features.transactionBuyPowerList[i]):
                 return
             k+=2
-            if rules.ControlClampIndex(k, pattern.transactionSellPowerList[i]):
+            if rules.ControlClampIndex(k, features.transactionSellPowerList[i]):
                 return
             k+=2
-            if rules.ControlClampIndex(k, pattern.firstLastPriceList[i]):
+            if rules.ControlClampIndex(k, features.firstLastPriceList[i]):
                 return
             k+=2
 
         #if rules.ControlClamp(AP.AdjustableParameter.MaxPowInDetail, pattern.maxDetailBuyPower):
         #    return
 
-        if rules.ControlClamp(AP.AdjustableParameter.AverageVolume, pattern.averageVolume):
+        if rules.ControlClamp(AP.AdjustableParameter.AverageVolume, features.averageVolume):
             return
-        if rules.ControlClamp(AP.AdjustableParameter.JumpCount10M, pattern.jumpCountList[0]):
+        if rules.ControlClamp(AP.AdjustableParameter.JumpCount10M, features.jumpCountList[0]):
            return
-        if rules.ControlClamp(AP.AdjustableParameter.JumpCount1H, pattern.jumpCountList[1]):
+        if rules.ControlClamp(AP.AdjustableParameter.JumpCount1H, features.jumpCountList[1]):
            return
-        if rules.ControlClamp(AP.AdjustableParameter.JumpCount12H, pattern.jumpCountList[2]):
+        if rules.ControlClamp(AP.AdjustableParameter.JumpCount12H, features.jumpCountList[2]):
            return
 
-        if rules.ControlClamp(AP.AdjustableParameter.NetPrice1H, pattern.netPriceList[0]):
+        if rules.ControlClamp(AP.AdjustableParameter.NetPrice1H, features.netPriceList[0]):
             return
-        if rules.ControlClamp(AP.AdjustableParameter.NetPrice8H, pattern.netPriceList[1]):
+        if rules.ControlClamp(AP.AdjustableParameter.NetPrice8H, features.netPriceList[1]):
             return
-        if rules.ControlClamp(AP.AdjustableParameter.NetPrice24H, pattern.netPriceList[2]):
+        if rules.ControlClamp(AP.AdjustableParameter.NetPrice24H, features.netPriceList[2]):
             return
-        if rules.ControlClamp(AP.AdjustableParameter.NetPrice168H, pattern.netPriceList[3]):
+        if rules.ControlClamp(AP.AdjustableParameter.NetPrice168H, features.netPriceList[3]):
             return
 
         #if rules.ControlClamp(AP.AdjustableParameter.PeakTime0, pattern.timeList[-1]):
         #    return
-        if rules.ControlClamp(AP.AdjustableParameter.PeakTime1, pattern.timeList[-2]):
+        if rules.ControlClamp(AP.AdjustableParameter.PeakTime1, features.timeList[-2]):
             return
-        if rules.ControlClamp(AP.AdjustableParameter.PeakTime2, pattern.timeList[-3]):
+        if rules.ControlClamp(AP.AdjustableParameter.PeakTime2, features.timeList[-3]):
             return
 
-        if rules.ControlClamp(AP.AdjustableParameter.PeakLast1, pattern.peaks[-2]):
+        if rules.ControlClamp(AP.AdjustableParameter.PeakLast1, features.peaks[-2]):
             return
-        if rules.ControlClamp(AP.AdjustableParameter.PeakLast2, pattern.peaks[-3]):
+        if rules.ControlClamp(AP.AdjustableParameter.PeakLast2, features.peaks[-3]):
             return
-        if rules.ControlClamp(AP.AdjustableParameter.PeakLast3, pattern.peaks[-4]):
+        if rules.ControlClamp(AP.AdjustableParameter.PeakLast3, features.peaks[-4]):
             return
-        if rules.ControlClamp(AP.AdjustableParameter.PeakLast4, pattern.peaks[-5]):
+        if rules.ControlClamp(AP.AdjustableParameter.PeakLast4, features.peaks[-5]):
             return
 
         self.smallestStrikeCount = min(self.smallestStrikeCount, rules.strikeCount)
         #print(pattern.marketStateList)
-        category = self.__GetCategory(curIndex,basePrice,pattern)
+        category = self.__GetCategory(curIndex,basePrice,features)
         if category == 0:
-            self.mustBuyList.append(pattern)
+            self.mustBuyList.append(features)
         elif category == 1:
             self.addedCount += 1
             #if self.isRise:
             #    print("name: ", self.currencyName, " time: ", curTimeInMiliSecs, " curIndex: ", curIndex, " all vals: ", pattern.GetFeatures(rules))
-            self.patternList.append(pattern)
+            self.patternList.append(features)
             eliminatedList2.AddEliminatedBool(self.currencyName, self.isExtra, curPattern.endTimeInSecs)
             #print(basePrice, self.currencyName)
         elif category == 2:
-            self.badPatternList.append(pattern)
+            self.badPatternList.append(features)
             self.addedCount += 1
             eliminatedList2.AddEliminatedBool(self.currencyName, self.isExtra, curPattern.endTimeInSecs)
 
-        pattern.isExtra = self.isExtra
-        pattern.patternTime = curPattern.endTimeInSecs
-        pattern.name = self.currencyName
+        features.isExtra = self.isExtra
+        features.patternTime = curPattern.endTimeInSecs
+        features.name = self.currencyName
 
     def __GetCategory(self, curIndex, priceIn, pattern):
         if self.isRise:
@@ -673,7 +676,7 @@ class SuddenChangeManager:
 
     def ReadFile(self, fileName):
         file = open(fileName, "r")
-        #print("Reading file: ", fileName)
+        print("Reading file: ", fileName)
         jsonDictionary = json.load(file)
         index = 1 if self.isTest else 0
         handlerList = self.suddenChangeMergerList[index].AddFile(jsonDictionary, fileName, self.isTest)
@@ -703,7 +706,7 @@ class SuddenChangeManager:
             allFiles = allJumpFiles + allExtraFiles
         if IsMultiThreaded:
             lock = multiprocessing.Lock()
-            pool_obj = multiprocessing.Pool(initializer=init_pool_processes, initargs=(lock,), processes=16,maxtasksperchild=100)
+            pool_obj = multiprocessing.Pool(initializer=init_pool_processes, initargs=(lock,), processes=30,maxtasksperchild=500)
             pool_obj.map(self.ReadFile, allFiles)
         else:
             for fileName in allFiles:
